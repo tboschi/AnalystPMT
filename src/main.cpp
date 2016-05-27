@@ -39,20 +39,23 @@ int main(int argc, char** argv)
 	}
 	fin.close();
 
-	PulseFinder *PF;
-
+	PulseFinder *PF; 
 	for (int i = 0; i < RF_In.size(); i++)
 	{
 		PF = new PulseFinder(fold);
 		
 		PF->SetConfig("config");
-		PF->OpenIns(RF_In.at(i));
-		PF->OpenOuts(RF_In.at(i));
+		if (PF->OpenIns(RF_In.at(i)))
+			if (PF->OpenOuts(RF_In.at(i)))
+			{
+				std::cout << "d0\n" << std::endl;
+				PF->GetTree();
+				std::cout << "d1\n" << std::endl;
+				PF->LoopTrg();
+				std::cout << "d2\n" << std::endl;
+			}
 
-		PF->GetTree();
-		PF->LoopTrg();
-
-		delete PF;
+		std::cout << "d3\n" << std::endl;
 	}
 
 	return 0;
