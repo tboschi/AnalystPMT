@@ -1,0 +1,24 @@
+#configuration file for PulseFinder
+#
+#debug is 1 for overwriting already analysed files, 0 for only new ones
+#verb is verbosity level
+#r_hys is the hysteresis ratio with respect to any threshold
+#thr_pek is the threshold for pulse definition
+#thr_evt is the threshold for event definition
+#thr_sig is the threshold for signal discrimination from background
+#shape is the time window, for peak and energy computation
+#binwid is the time calibration of Data bin width
+#graph is 1 for shape analysis, 0 for skipping it (requires some postprocessing resources)
+#evlength is the bin size of Data for shape analysis
+#peakpos is the position of the peak in the evlength window, in percent
+debug 1
+verb 0
+r_hys 0
+thr_pek 0.02
+thr_evt 10
+thr_sig 5
+shape 10
+binwid 0.002
+graph 1
+evlength 500
+peakpos 20
