@@ -11,9 +11,9 @@
 #graph is 1 for shape analysis, 0 for skipping it (requires some postprocessing resources)
 #evlength is the bin size of Data for shape analysis
 #peakpos is the position of the peak in the evlength window, in percent
-debug 0
+debug 1
 verb 0
-r_hys 0
+r_hys 2
 thr_pek 0.02
 thr_evt 10
 thr_sig 5

@@ -48,14 +48,10 @@ int main(int argc, char** argv)
 		if (PF->OpenIns(RF_In.at(i)))
 			if (PF->OpenOuts(RF_In.at(i)))
 			{
-				std::cout << "d0\n" << std::endl;
 				PF->GetTree();
-				std::cout << "d1\n" << std::endl;
 				PF->LoopTrg();
-				std::cout << "d2\n" << std::endl;
+				delete PF;
 			}
-
-		std::cout << "d3\n" << std::endl;
 	}
 
 	return 0;

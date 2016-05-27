@@ -104,7 +104,7 @@ void EventReco::SetCH()
 void EventReco::SetEN()
 {
 	double x, y, sum = 0;
-	for (int i = int(tCFD/bw)-10; i < int(ZeroC/bw)+10; i++)
+	for (int i = int(tCFD/bw)-10; i < int((tCFD+ZeroC)/bw)+10; i++)
 		sum += Pulse[i-tPeak+np];
 	Energy = sum;
 }

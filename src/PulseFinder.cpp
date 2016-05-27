@@ -21,7 +21,7 @@ PulseFinder::~PulseFinder()
 {
 	CleanHist();
 	Close();
-	delete PMT;
+//	delete PMT;
 }
 
 void PulseFinder::LoopTrg()

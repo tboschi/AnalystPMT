@@ -10,6 +10,7 @@
 #include "TStyle.h"
 #include "TGraph.h"
 
+bool Graph(std::string cfn);
 int main(int argc, char **argv)
 {
 	std::string fold = ".";
@@ -87,9 +88,30 @@ int main(int argc, char **argv)
 		hEvent = (TH1I*) rootF->Get("hevent"); 
 		hDarkN = (TH2F*) rootF->Get("hdark"); 
 
-		gMean = (TGraph*) rootF->Get("gmean");
-		giRWM = (TGraph*) rootF->Get("girwm");
-		goRWM = (TGraph*) rootF->Get("gorwm");
+		if (Graph)
+		{
+			std::cout << "Graph mode on " << std::endl;
+			gMean = (TGraph*) rootF->Get("gmean");
+			giRWM = (TGraph*) rootF->Get("girwm");
+			goRWM = (TGraph*) rootF->Get("gorwm");
+
+			double x, y, y0;
+			std::cout << "GetN " << gMean->GetN() << std::endl;
+			for (int i = 0; i < gMean->GetN(); i++)
+			{
+				TGMean->GetPoint(i, x, y);
+				gMean->GetPoint(i, x, y0);
+				TGMean->SetPoint(i, x, y+y0/RF_In.size());
+	
+				TGiRWM->GetPoint(i, x, y);
+				giRWM->GetPoint(i, x, y0);
+				TGiRWM->SetPoint(i, x, y+y0/RF_In.size());
+	
+				TGoRWM->GetPoint(i, x, y);
+				goRWM->GetPoint(i, x, y0);
+				TGoRWM->SetPoint(i, x, y+y0/RF_In.size());
+			}
+		}
 
 		TPtot->Add(hPtot);
 		TCtot->Add(hCtot);
@@ -98,22 +120,6 @@ int main(int argc, char **argv)
 		TNoise->Add(hNoise);
 		TEvent->Add(hEvent);
 		TDarkN->Add(hDarkN, 1.0/RF_In.size());
-
-		double x, y, y0;
-		for (int i = 0; i < gMean->GetN(); i++)
-		{
-			TGMean->GetPoint(i, x, y);
-			gMean->GetPoint(i, x, y0);
-			TGMean->SetPoint(i, x, y+y0/RF_In.size());
-
-			TGiRWM->GetPoint(i, x, y);
-			giRWM->GetPoint(i, x, y0);
-			TGiRWM->SetPoint(i, x, y+y0/RF_In.size());
-
-			TGoRWM->GetPoint(i, x, y);
-			goRWM->GetPoint(i, x, y0);
-			TGoRWM->SetPoint(i, x, y+y0/RF_In.size());
-		}
 
 	}
 
@@ -176,3 +182,25 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+bool SetConfig(std::string cfn)
+{
+	std::ifstream fin(cfn.c_str());
+	std::string Line, var;
+	bool val;
+	std::stringstream ssL;
+	while (getline(fin, Line))
+	{
+		if (Line[0] == '#') continue;
+		else
+		{
+			ssL.str("");
+			ssL.clear();
+			ssL << Line;
+			ssL >> var >> val;
+			if (var == "graph") return val;
+		}
+	}
+	fin.close();
+}
+

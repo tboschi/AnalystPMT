@@ -83,6 +83,7 @@ void PulseFinder::GraphAVG(TGraph *g, int &cc)
 		gReco->GetPoint(i, x, y0);
 		g->GetPoint(i, x, y);
 		g->SetPoint(i, bw*i, ((cc-1)*y+y0)/cc);
+		std::cout << "y0 " << y0 << std::endl;
 	}
 }
 
