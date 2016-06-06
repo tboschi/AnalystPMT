@@ -12,7 +12,13 @@ EventReco::EventReco(std::string cfn, PMTData *PMT, int ent, int bin, int rwm, i
 	Pulse = new double[el];
 	PMT->GetEntry(ent);
 	for (int i = 0; i < el; i++)
-		Pulse[i] = PMT->Data[i+tPeak-np];		//i == np -> tPeak
+	{
+		if (i+tPeak-np < 0)
+			Pulse[i] = PMT->Data[i+tPeak-np+el];		//i == np -> tPeak
+		else if (i+tPeak-np >= 40000)
+			Pulse[i] = PMT->Data[i+tPeak-np-el];		//i == np -> tPeak
+		else Pulse[i] = PMT->Data[i+tPeak-np];		//i == np -> tPeak
+	}
 }
 
 void EventReco::LoadGraph()
@@ -22,16 +28,25 @@ void EventReco::LoadGraph()
 		gPulse->SetPoint(i, bw*(i-np), Pulse[i]);
 }
 
+void EventReco::LoadDeriv()
+{
+	gDeriv = new TGraph(el);
+	gDeriv->SetPoint(0, *(gPulse->GetX()), *(gPulse->GetY()));
+	for (int i = 1; i < el; i++)
+		gDeriv->SetPoint(i, bw*(i-np), Pulse[i]-Pulse[i-1]);
+}
+
 void EventReco::FillN(TNtuple *nT)
 {
 	nPulse = nT;
-	nPulse->Fill(GetBL(), GetPK(), GetCH(), GetEN(), GetCFD(), GetZC(), GetTOF());	
+	nPulse->Fill(GetBL(), GetPK(), bw*(GettVL()-np), GetCH(), GetEN(), GetCFD(), GetZC(), GetTOF());	
 }
 
 void EventReco::LoadN()
 {			//ordering is vital!
 	SetBL();
 	SetPK();
+	SetVL();
 	SetCFD();
 	SetZC();
 	SetCH();
@@ -47,6 +62,8 @@ void EventReco::Print()
 	std::cout << "Baseline \t" << GetBL() << std::endl;
 	std::cout << "Peak     \t" << GetPK() << std::endl;
 	std::cout << "Peak time\t" << bw*GettPK() << std::endl;
+	std::cout << "Valley   \t" << GetVL() << std::endl;
+	std::cout << "Valley t \t" << bw*GettVL() << std::endl;
 	std::cout << "tCFD     \t" << GetCFD() << std::endl;
 	std::cout << "Zero Cr  \t" << GetZC() << std::endl;
 	std::cout << "Time O F \t" << GetTOF() << std::endl;
@@ -57,6 +74,12 @@ void EventReco::Print()
 TGraph *EventReco::GetGraph()
 {
 	return gPulse;
+}
+
+TGraph *EventReco::GetDeriv()
+{
+	LoadDeriv();
+	return gDeriv;
 }
 
 void EventReco::SetBL()		//Set to zero the avg of the first 20 points
@@ -93,6 +116,22 @@ void EventReco::SetPK()
 	Peak = Pulse[np];
 }
 
+void EventReco::SetVL()
+{
+	double min = Pulse[0];
+	int p = 0;
+	for (int i = 0; i < el; i++)
+	{
+		if (Pulse[i] < min)
+		{
+			min = Pulse[i];
+			p = i;
+		}
+	}
+	Valley = min;
+	tValley = p;
+}
+
 void EventReco::SetCH()
 {
 	double x, y, sum = 0;
@@ -111,49 +150,47 @@ void EventReco::SetEN()
 
 void EventReco::SetCFD()
 {
-//	if ((tPeak < 0) || (tPeak > el-1)) tCFD = sqrt(-1);
-//	else
-	{
-		int x1, x2 = tPeak - el*pc*0.01;	//Define this better
-//		if (x2 < 0) x2 = 0;
+	double thr = 0.25;
+	int x1, x2 = tPeak - el*pc*0.01;	//Define this better
+	double diff = fabs((1-thr)*Peak);
 
-		double diff = fabs(0.5*Peak);
+	for (x1 = np; x1 > 0; x1--)
+		if (diff < fabs(Peak-Pulse[x1])) break;
 
-//		for (x1 = tPeak; x1 > x2; x1--)
-		for (x1 = np; x1 > np-10; x1--)
-			if (diff < fabs(Peak-Pulse[x1])) break;
-
-		tCFD = CI(Pulse, ++x1, Peak*0.5, 1);
-	}
+	tCFD = CI(Pulse, ++x1, Peak*thr, 1);
 	tCFD += tPeak - np;
 	tCFD *= bw;
-
+/*
 	double x, y;
 	for (int i = 0; i < gPulse->GetN(); i++)
 	{
 		gPulse->GetPoint(i, x, y);
 		gPulse->SetPoint(i, x+bw*tPeak-tCFD, y);
 	}
-
+*/
 }
 
 void EventReco::SetZC()
 {
-//	if ((tPeak < 0) || (tPeak > el-1)) ZeroC = sqrt(-1);
-//	else
-	{
-		int x1, x2 = tPeak + el*(1-pc)*0.01;	//Define this better
-		if (x2 > el-1) x2 = el-1;
+	double thr = 0.05;
+	int x1, x2 = tPeak + el*(1-pc)*0.01;	//Define this better
+	if (x2 > el-1) x2 = el-1;
 
-		double diff = fabs(0.9*Peak);
+	double diff = fabs((1-thr)*Peak);
 
-		for (x1 = np; x1 < np+50; x1++)
-			if (diff < fabs(Peak-Pulse[x1])) break;
+	for (x1 = tValley; x1 > np; x1--)
+		if (diff > fabs(Peak-Pulse[x1])) break;
 
-		ZeroC = CI(Pulse, --x1, Peak*0.1, 1);
-	}
+	ZeroC = CI(Pulse, ++x1, Peak*thr, 1);
 	ZeroC += tPeak - np;
 	ZeroC *= bw;
+	double x, y;
+	for (int i = 0; i < gPulse->GetN(); i++)
+	{
+		gPulse->GetPoint(i, x, y);
+		gPulse->SetPoint(i, x+bw*tPeak-ZeroC, y);
+	}
+
 	ZeroC -= tCFD;
 }
 
@@ -180,7 +217,7 @@ void EventReco::SetPC(double perc)
 
 double EventReco::CI(double *data, int x2, double fmax, double tau)
 {
-	x2--;
+	x2 -= 1;
 	double xi = (fmax - data[x2])/(data[x2+1] - data[x2]);
 	double a3 = 0.5*data[x2] - (1./6.)*data[x2-1] + (1./6.)*data[x2+2] - 0.5*data[x2+1];
 	double a2 = (-data[x2] + 0.5*data[x2+1] + 0.5*data[x2-1]);
@@ -229,6 +266,16 @@ double EventReco::GetPK()
 double EventReco::GettPK()
 {
 	return tPeak;
+}
+
+double EventReco::GetVL()
+{
+	return Valley;
+}
+
+double EventReco::GettVL()
+{
+	return tValley;
 }
 
 double EventReco::GetCH()

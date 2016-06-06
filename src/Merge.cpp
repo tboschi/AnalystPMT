@@ -4,11 +4,16 @@
 #include <sstream>
 #include <vector>
 
+#include "Event.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TFile.h"
 #include "TStyle.h"
 #include "TGraph.h"
+#include "TTree.h"
+#include "TNtuple.h"
+#include "TList.h"
+#include "TDirectory.h"
 
 bool Graph(std::string cfn);
 int main(int argc, char **argv)
@@ -51,6 +56,9 @@ int main(int argc, char **argv)
 	TH1I *hEvent;
 	TH2F *hDarkN;
 	TGraph *gMean, *giRWM, *goRWM;
+	TNtuple *nevent;
+
+	TList *tlist = new TList;
 
 	TH1F *TPtot = new TH1F("tptot", "time distribution", 4000, 0, 80);
 	TH1F *TCtot = new TH1F("tctot", "charge distribution", 4000, 0, 80);
@@ -64,6 +72,7 @@ int main(int argc, char **argv)
 	TGraph *TGiRWM = new TGraph();
 	TGraph *TGoRWM = new TGraph();
 
+	TDirectory * dir;
 
 	for (int v = 0; v < RF_In.size(); v++)
 	{
@@ -78,6 +87,11 @@ int main(int argc, char **argv)
 
 //Copy objects
 
+		dir = (TDirectory*) rootF->Get("Event");
+		dir->GetObject("nevent", nevent);
+
+		tlist->Add(nevent);
+
 		rootF->cd();
 	
 		hPtot = (TH1F*) rootF->Get("hptot"); 
@@ -90,13 +104,11 @@ int main(int argc, char **argv)
 
 		if (Graph)
 		{
-			std::cout << "Graph mode on " << std::endl;
 			gMean = (TGraph*) rootF->Get("gmean");
 			giRWM = (TGraph*) rootF->Get("girwm");
 			goRWM = (TGraph*) rootF->Get("gorwm");
 
 			double x, y, y0;
-			std::cout << "GetN " << gMean->GetN() << std::endl;
 			for (int i = 0; i < gMean->GetN(); i++)
 			{
 				TGMean->GetPoint(i, x, y);
@@ -126,6 +138,10 @@ int main(int argc, char **argv)
 //Write
 
 	outF->cd();
+
+	//Tree
+	TTree *tEv = TTree::MergeTrees(tlist);
+	tEv->SetName("tevreco");
 
 	//Histograms
 	TPtot->GetXaxis()->SetTitle("time");

@@ -22,12 +22,13 @@ void PulseFinder::SaveGraph()
 	int cI = 0;
 	goRWM = new TGraph();
 	int cO = 0;
+	gDiff = new TGraph();
 
 	for (int i = 0; i < vER.size(); i++)
 	{
 		ssName.str("");
 		ssName.clear();
-		ssName << "Event_" << i << "_" << vER.at(i)->GetTRG();
+		ssName << "pulse_" << i << "_" << vER.at(i)->GetTRG();
 		ssName << "_" << vER.at(i)->GetID();
 		ssName << "_" << vER.at(i)->GetEVT();
 		gReco = vER.at(i)->GetGraph();
@@ -40,7 +41,14 @@ void PulseFinder::SaveGraph()
 		gReco->GetYaxis()->SetTitle("Data");
 		gReco->SetTitle("Pulse");
 
-		gReco->Write(ssName.str().c_str());
+		if (i % 100 == 0)
+		{
+			gReco->Write(ssName.str().c_str());
+			gDiff = vER.at(i)->GetDeriv();
+			ssName << "_d";
+			gDiff->Write(ssName.str().c_str());
+			std::cout << "cross " << 0.05*vER.at(i)->GetPK() << std::endl;
+		}
 		delete vER.at(i);
 	}
 
@@ -71,19 +79,20 @@ void PulseFinder::SaveGraph()
 	delete gMean;
 	delete giRWM;
 	delete goRWM;
+	delete gDiff;
 
 }
 
 void PulseFinder::GraphAVG(TGraph *g, int &cc)
 {
 	double x, y0, y;
-	++cc;
+	 ++cc;
 	for (int i = 0; i < gReco->GetN(); i++)
 	{
 		gReco->GetPoint(i, x, y0);
 		g->GetPoint(i, x, y);
 		g->SetPoint(i, bw*i, ((cc-1)*y+y0)/cc);
-		std::cout << "y0 " << y0 << std::endl;
+		if (y0 > 1000) std::cout << cc << std::endl;
 	}
 }
 

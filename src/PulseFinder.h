@@ -120,18 +120,18 @@ class PulseFinder
 		std::fstream fout;
 		TFile *oldF, *newF;
 		TTree *TreeData;
-		TH1F *hSNtot, *hSignl, *hNoise, *hPulse, *hCharg, *hRWMon, *hPtot, *hCtot, *hDouble;
+		TH1F *hPeak, *hSNtot, *hSignl, *hNoise, *hPulse, *hCharg, *hRWMon, *hPtot, *hCtot, *hDouble;
 		TH1I *hEvent;
 		TH2F *hEner, *hTime, *hDark;
 		std::vector<EventReco*> vER;
 		TNtuple *nEvent;
-		TGraph *gReco, *gMean, *giRWM, *goRWM;
+		TGraph *gReco, *gMean, *giRWM, *goRWM, *gDiff, *gSumm;
 		TLine *lThr1, *lThr2;
 
 		std::string Dir;		//Inside vectors and vars
 		std::vector<Coord> vPos; 
 //		std::vector<double> vH;
-		std::vector<double> vI, vT, vEvt;
+		std::vector<double> vI, vT, vH, vEvt;
 		std::vector<int> vID, vBin, vEntry;
 		std::map<int, double> mI, mT, mDR;
 		std::map<int, Coord> mPos;

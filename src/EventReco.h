@@ -30,12 +30,15 @@ class EventReco
 	public:
 		EventReco(std::string cfn, PMTData *PMT, int ent, int bin, int rwm, int trg, int id, int evt);
 		void LoadGraph();
+		void LoadDeriv();
 		void FillN(TNtuple *nT);
 		void LoadN();
 		void Print();
 		TGraph *GetGraph();
+		TGraph *GetDeriv();
 		void SetBL();		//Set to zero the avg of the first 20 points
 		void SetPK();
+		void SetVL();
 		void SetCH();
 		void SetEN();
 		void SetCFD();
@@ -49,6 +52,8 @@ class EventReco
 		double GetBL();
 		double GetPK();
 		double GettPK();
+		double GetVL();
+		double GettVL();
 		double GetCH();
 		double GetEN();
 		double GetCFD();
@@ -62,13 +67,13 @@ class EventReco
 		double GetPC();
 
 	private:
-		double Baseline, Peak, Charge, Energy, tCFD, ZeroC, TOF;
-		int tPeak;
+		double Baseline, Peak, Valley, Charge, Energy, tCFD, ZeroC, TOF;
+		int tPeak, tValley;
 		int RWM, TRG, ID, EVT;
 		double bw, pc;
 		int el, np;
 
-		TGraph *gPulse;
+		TGraph *gPulse, *gDeriv;
 		TNtuple *nPulse;
 		double *Pulse;
 };

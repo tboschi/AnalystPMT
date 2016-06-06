@@ -51,9 +51,10 @@ void PulseFinder::LoopTrg()
 	hSNtot = new TH1F("hsntot", "signal and noise", 5000, 0, 10);
 	hSignl = new TH1F("hsignl", "signal", 5000, 0, 10);
 	hNoise = new TH1F("hnoise", "dark noise", 5000, 0, 10);
+//	hPeak = new TH1F("hpeak", "", 5000, 0, 10);
 	hDark = new TH2F("hdark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 
-	nEvent = new TNtuple("nevent", "event data", "baseline:peak:charge:energy:tcfd:zeroc:tof");
+	nEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
 
 	for (long i = 0; i < ntrg; i++)
 	{
@@ -92,6 +93,7 @@ void PulseFinder::LoopPMT(int trg)
 {
 	vI.clear();
 	vT.clear();
+//	vH.clear();
 	vBin.clear();
 	vPos.clear();
 	vID.clear();
@@ -146,6 +148,7 @@ void PulseFinder::FindPulses(int ent)
 			vPos.push_back(pos);		//PMT location
 			vI.push_back(ener);		//ener of pulse
 			vT.push_back(bw*time);		//real time of pulse
+//			vH.push_back(peak);		//peak height
 			vBin.push_back(time);		//bw of pulse
 			vID.push_back(PMT->PMTID);	//ID
 			vEntry.push_back(ent);		//Tree entry
@@ -169,7 +172,7 @@ void PulseFinder::FindPulses(int ent)
 			if (hDouble->GetBinContent(time/10.0) > 0) mc++;
 
 			if (time > k)
-				k = time;		//FFW
+				k = time+100;		//FFW must be validated
 		}
 	}
 	hPulse->Add(hDouble);

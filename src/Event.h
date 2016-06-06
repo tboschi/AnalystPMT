@@ -1,12 +1,12 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Fri May 27 12:33:31 2016 by ROOT version 5.34/36
-// from TTree PMTData/PMTData
-// found on file: test/DataR31S0p43T0May_15_23:03.root
+// Thu Jun  2 09:17:23 2016 by ROOT version 5.34/36
+// from TTree Event/event data
+// found on file: test/result/rDataR41S0p15T0May_23_15:32.root
 //////////////////////////////////////////////////////////
 
-#ifndef PMTData_h
-#define PMTData_h
+#ifndef Event_h
+#define Event_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -16,43 +16,31 @@
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
-class PMTData {
+class Event {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
 
    // Declaration of leaf types
-   Long64_t        Trigger;
-   Int_t           LastSync;
-   Int_t           SequenceID;
-   Int_t           StartTime;
-   Int_t           CardID;
-   Int_t           Channel;
-   Int_t           PMTID;
-   Int_t           PMTf;
-   Int_t           PMTx;
-   Int_t           PMTy;
-   Int_t           PMTz;
-   Int_t           BufferSize;
-   Float_t         Data[40000];   //[BufferSize]
+   Float_t         baseline;
+   Float_t         peak;
+   Float_t         charge;
+   Float_t         energy;
+   Float_t         tcfd;
+   Float_t         zeroc;
+   Float_t         tof;
 
    // List of branches
-   TBranch        *b_Trigger;   //!
-   TBranch        *b_LastSync;   //!
-   TBranch        *b_SequenceID;   //!
-   TBranch        *b_StartTime;   //!
-   TBranch        *b_CardID;   //!
-   TBranch        *b_Channel;   //!
-   TBranch        *b_PMTID;   //!
-   TBranch        *b_PMTf;   //!
-   TBranch        *b_PMTx;   //!
-   TBranch        *b_PMTy;   //!
-   TBranch        *b_PMTz;   //!
-   TBranch        *b_BufferSize;   //!
-   TBranch        *b_Data;   //!
+   TBranch        *b_baseline;   //!
+   TBranch        *b_peak;   //!
+   TBranch        *b_charge;   //!
+   TBranch        *b_energy;   //!
+   TBranch        *b_tcfd;   //!
+   TBranch        *b_zeroc;   //!
+   TBranch        *b_tof;   //!
 
-   PMTData(TTree *tree=0);
-   virtual ~PMTData();
+   Event(TTree *tree=0);
+   virtual ~Event();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
@@ -64,35 +52,36 @@ public :
 
 #endif
 
-#ifdef PMTData_cxx
-PMTData::PMTData(TTree *tree) : fChain(0) 
+#ifdef Event_cxx
+Event::Event(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("test/DataR31S0p43T0May_15_23:03.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("test/result/rDataR41S0p15T0May_23_15:32.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("test/DataR31S0p43T0May_15_23:03.root");
+         f = new TFile("test/result/rDataR41S0p15T0May_23_15:32.root");
       }
-      f->GetObject("PMTData",tree);
+      TDirectory * dir = (TDirectory*)f->Get("test/result/rDataR41S0p15T0May_23_15:32.root:/Event");
+      dir->GetObject("nevent",tree);
 
    }
    Init(tree);
 }
 
-PMTData::~PMTData()
+Event::~Event()
 {
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
 
-Int_t PMTData::GetEntry(Long64_t entry)
+Int_t Event::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t PMTData::LoadTree(Long64_t entry)
+Long64_t Event::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -105,7 +94,7 @@ Long64_t PMTData::LoadTree(Long64_t entry)
    return centry;
 }
 
-void PMTData::Init(TTree *tree)
+void Event::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -121,23 +110,17 @@ void PMTData::Init(TTree *tree)
    fCurrent = -1;
    fChain->SetMakeClass(1);
 
-   fChain->SetBranchAddress("Trigger", &Trigger, &b_Trigger);
-   fChain->SetBranchAddress("LastSync", &LastSync, &b_LastSync);
-   fChain->SetBranchAddress("SequenceID", &SequenceID, &b_SequenceID);
-   fChain->SetBranchAddress("StartTime", &StartTime, &b_StartTime);
-   fChain->SetBranchAddress("CardID", &CardID, &b_CardID);
-   fChain->SetBranchAddress("Channel", &Channel, &b_Channel);
-   fChain->SetBranchAddress("PMTID", &PMTID, &b_PMTID);
-   fChain->SetBranchAddress("PMTf", &PMTf, &b_PMTf);
-   fChain->SetBranchAddress("PMTx", &PMTx, &b_PMTx);
-   fChain->SetBranchAddress("PMTy", &PMTy, &b_PMTy);
-   fChain->SetBranchAddress("PMTz", &PMTz, &b_PMTz);
-   fChain->SetBranchAddress("BufferSize", &BufferSize, &b_BufferSize);
-   fChain->SetBranchAddress("Data", Data, &b_Data);
+   fChain->SetBranchAddress("baseline", &baseline, &b_baseline);
+   fChain->SetBranchAddress("peak", &peak, &b_peak);
+   fChain->SetBranchAddress("charge", &charge, &b_charge);
+   fChain->SetBranchAddress("energy", &energy, &b_energy);
+   fChain->SetBranchAddress("tcfd", &tcfd, &b_tcfd);
+   fChain->SetBranchAddress("zeroc", &zeroc, &b_zeroc);
+   fChain->SetBranchAddress("tof", &tof, &b_tof);
    Notify();
 }
 
-Bool_t PMTData::Notify()
+Bool_t Event::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -148,18 +131,18 @@ Bool_t PMTData::Notify()
    return kTRUE;
 }
 
-void PMTData::Show(Long64_t entry)
+void Event::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t PMTData::Cut(Long64_t entry)
+Int_t Event::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.
 // returns -1 otherwise.
    return 1;
 }
-#endif // #ifdef PMTData_cxx
+#endif // #ifdef nevent_cxx
