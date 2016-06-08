@@ -36,19 +36,20 @@ class EventReco
 		void Print();
 		TGraph *GetGraph();
 		TGraph *GetDeriv();
-		void SetBL();		//Set to zero the avg of the first 20 points
-		void SetPK();
-		void SetVL();
-		void SetCH();
-		void SetEN();
-		void SetCFD();
-		void SetZC();
-		void SetTOF();
-		void SetBW(double binw);
-		void SetEL(int evnl);
-		void SetPC(double perc);
+		void SetBL();			//Set to zero the avg of the first 20 points
+		void SetPK();			//Peak of pulse
+		void SetVL();			//Valley of pulse
+		void SetCH();			//Charge, sum of bin around peak
+		void SetEN();			//Energy = integral from tcfd to zc
+		void SetCFD();			//Start of pulse
+		void SetZC();			//width of pulse = Zero Crossin
+		void SetTOF();			//time of flight = zeroc-tcfd
+		void SetBW(double binw);	//bin width
+		void SetEL(int evnl);		//lenght of an event
+		void SetWL(int evnl);		//time window lenght
+		void SetSample(int evnl);	//Sample of digitiser
+		void SetPC(double perc);	//Peak pos in percent
 		double CI(double *data, int x2, double fmax, double tau);
-		void SetConfig(std::string cfn);
 		double GetBL();
 		double GetPK();
 		double GettPK();
@@ -64,14 +65,17 @@ class EventReco
 		int GetEVT();
 		double GetBW();
 		int GetEL();
+		int GetWL();
+		int GetSample();
 		double GetPC();
+		void SetConfig(std::string cfn);
 
 	private:
 		double Baseline, Peak, Valley, Charge, Energy, tCFD, ZeroC, TOF;
 		int tPeak, tValley;
 		int RWM, TRG, ID, EVT;
 		double bw, pc;
-		int el, np;
+		int el, wl, np, sample;
 
 		TGraph *gPulse, *gDeriv;
 		TNtuple *nPulse;

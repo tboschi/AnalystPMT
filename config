@@ -12,13 +12,15 @@
 #evlength is the bin size of Data for shape analysis
 #peakpos is the position of the peak in the evlength window, in percent
 debug 1
-verb 0
+verb 1
 r_hys 0
 thr_pek 0.02
 thr_evt 10
 thr_sig 5
-shape 10
+shape 4
+sample 4
 binwid 0.002
+winlength 40000
 graph 1
 evlength 500
 peakpos 20

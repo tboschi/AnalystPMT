@@ -46,20 +46,20 @@ class PulseFinder
 		~PulseFinder();
 
 		void LoopTrg();
-		void LoopPMT(int trg);
-		void FindPulses(int ent);
-		void FindEvents(int trg);
-		void CatchEvents(int trg, int evt);
-		void FillEvents(int trg, int evt);
-		void FillHist(int trg, int evt);
-		void SNcount(int trg, int evt = 0);
+		void LoopPMT(int trg, int spl);
+		void FindPulses(int ent, int spl);
+		void FindEvents(int trg, int spl);
+		void CatchEvents(int trg, int spl, int evt);
+		void FillEvents(int trg, int spl, int evt);
+		void FillHist(int trg, int spl, int evt);
+		void SNcount(int trg, int spl, int evt = 0);
 		void SaveDRHist();
 		void Save2DHist(int trg, int evt);
 		void Save1DHist();
 		void SaveGraph();
 		void GraphAVG(TGraph *g, int &cc);
 		int LocMaximum(int j, double &p);
-		double Integrate(int j);
+		double Integrate(int j, double bw = 1);
 		bool OpenIns(std::string fname);
 		bool OpenOuts(std::string fname);
 		void GetTree();
@@ -78,7 +78,10 @@ class PulseFinder
 		int GetThrSignal();
 		int GetShapingTime();
 		double GetBW();
+		int GetWinLen();
+		int GetSample();
 		int GetEL();
+		int GetNTrg();
 		double GetPC();
 		void SetThrPeak(double thr = 0.02);
 		void SetThrHyst(double thr = 0.01);
@@ -86,6 +89,8 @@ class PulseFinder
 		void SetThrSignal(int thr = 4);
 		void SetShapingTime(int sha = 10);
 		void SetBW(double binw = 0.002);
+		void SetWinLen(int thr = 40000);
+		void SetSample(int thr = 1);
 		void SetEL(int evnl = 500);
 		void SetPC(double perc = 10);
 		void SetDebug(int on = 0);
@@ -99,7 +104,10 @@ class PulseFinder
 	protected:
 
 		double bw;	//Bin width
+		int wl;		//Event length
+		int sample;	//Event length
 		int el;		//Event length
+		unsigned int ntrg;	//Num of triggers in file
 		double pc;	//Peak position, in percentage of Event length
 		PMTData *PMT;
 

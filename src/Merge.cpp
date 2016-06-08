@@ -15,7 +15,16 @@
 #include "TList.h"
 #include "TDirectory.h"
 
-bool Graph(std::string cfn);
+bool graph;
+double bw;
+int sample;
+int wl;
+
+void SetConfig(std::string cfn);
+void SetGraph(bool val);
+void SetBW(double val);
+void SetSample(int val);
+void SetWinLen(int val);
 int main(int argc, char **argv)
 {
 	std::string fold = ".";
@@ -46,6 +55,8 @@ int main(int argc, char **argv)
 	}
 	fin.close();
 
+	SetConfig("config");
+
 	ssL.str("");
 	ssL.clear();
 	ssL << fold << "Merged.root";
@@ -60,12 +71,12 @@ int main(int argc, char **argv)
 
 	TList *tlist = new TList;
 
-	TH1F *TPtot = new TH1F("tptot", "time distribution", 4000, 0, 80);
-	TH1F *TCtot = new TH1F("tctot", "charge distribution", 4000, 0, 80);
+	TH1F *TPtot = new TH1F("tptot", "time distribution", int(0.1*wl), 0, wl*bw);
+	TH1F *TCtot = new TH1F("tctot", "charge distribution", int(0.1*wl), 0, wl*bw);
 	TH1F *TSNtot = new TH1F("tsntot", "signal and noise", 5000, 0, 10);
 	TH1F *TSignl = new TH1F("tsignl", "signal", 5000, 0, 10);
 	TH1F *TNoise = new TH1F("tnoise", "dark noise", 5000, 0, 10);
-	TH1I *TEvent = new TH1I("tevent", "event", 80, 0, 80);
+	TH1I *TEvent = new TH1I("tevent", "event", int(0.1*wl), 0, wl*bw);
 	TH2F *TDarkN = new TH2F("tdarkn", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 
 	TGraph *TGMean = new TGraph();
@@ -102,7 +113,7 @@ int main(int argc, char **argv)
 		hEvent = (TH1I*) rootF->Get("hevent"); 
 		hDarkN = (TH2F*) rootF->Get("hdark"); 
 
-		if (Graph)
+		if (graph)
 		{
 			gMean = (TGraph*) rootF->Get("gmean");
 			giRWM = (TGraph*) rootF->Get("girwm");
@@ -126,12 +137,19 @@ int main(int argc, char **argv)
 		}
 
 		TPtot->Add(hPtot);
+		std::cout << "A1" << std::endl;
 		TCtot->Add(hCtot);
+		std::cout << "A2" << std::endl;
 		TSNtot->Add(hSNtot);
+		std::cout << "A3" << std::endl;
 		TSignl->Add(hSignl);
+		std::cout << "A4" << std::endl;
 		TNoise->Add(hNoise);
+		std::cout << "A5" << std::endl;
 		TEvent->Add(hEvent);
+		std::cout << "A6" << std::endl;
 		TDarkN->Add(hDarkN, 1.0/RF_In.size());
+		std::cout << "A7" << std::endl;
 
 	}
 
@@ -166,7 +184,7 @@ int main(int argc, char **argv)
 	TSignl->Rebin(10);
 	TNoise->Rebin(10);
 	TDarkN->SetContour(40);
-	TDarkN->SetOption("COLZTEXT");
+	TDarkN->SetOption("COLZ10TEXT");
 
 	//Graphs
 	TGMean->GetXaxis()->SetTitle("time");
@@ -199,11 +217,11 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-bool SetConfig(std::string cfn)
+void SetConfig(std::string cfn)
 {
 	std::ifstream fin(cfn.c_str());
 	std::string Line, var;
-	bool val;
+	double val;
 	std::stringstream ssL;
 	while (getline(fin, Line))
 	{
@@ -214,9 +232,31 @@ bool SetConfig(std::string cfn)
 			ssL.clear();
 			ssL << Line;
 			ssL >> var >> val;
-			if (var == "graph") return val;
+			if (var == "graph") SetGraph(val);
+			if (var == "sample") SetSample(val);
+			if (var == "binwid") SetBW(val);
+			if (var == "winlength") SetWinLen(val);
 		}
 	}
 	fin.close();
 }
 
+void SetGraph(bool val)
+{
+	graph = val;
+}
+
+void SetSample(int val)
+{
+	sample = val;
+}
+
+void SetBW(double val)
+{
+	bw = sample*val;
+}
+
+void SetWinLen(int val)
+{
+	wl = val/sample;
+}

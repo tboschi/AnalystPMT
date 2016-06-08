@@ -2,22 +2,25 @@
 
 void PulseFinder::SaveDRHist()
 {
-	int px, pz;
-	for (int i = 1; i < 61; i++)
+	int ID;
+	std::map<int, Coord>::const_iterator imP;
+	for (imP = mPos.begin(); imP != mPos.end(); imP++)
 	{
-		mDR[i] /= 360*0.00008;
-		px = mPos[i].x;
-		pz = mPos[i].z;
-		hDark->SetBinContent(px+1, pz+1, mDR[i]);
+		ID = imP->first;
+		std::cout << "dark rate " << mDR[ID];
+		mDR[ID] /= 0.000001*ntrg*bw*wl*sample;
+		hDark->SetBinContent(imP->second.x+1, imP->second.z+1, mDR[ID]);
+		std::cout << "\t" << mDR[ID] << std::endl;
 	}
 
 	newF->cd();
 
 	hDark->SetContour(40);
 	hDark->SetStats(kFALSE);
+	hDark->SetOption("COLZ10TEXT");
 	hDark->GetXaxis()->SetTitle("x");
 	hDark->GetYaxis()->SetTitle("z");
-	hDark->SetOption("COLZTEXT");
+
 
 	hDark->GetZaxis()->SetRangeUser(MinM(mDR), MaxM(mDR));
 	hDark->Write();
@@ -29,7 +32,7 @@ int PulseFinder::LocMaximum(int j, double &p)
 	int time = j;
 	for (int i = j; i < j+shape+1; i++)
 	{
-		if ((i < 0) || (i > 40000)) continue;
+		if ((i < 0) || (i > wl)) continue;
 		if (PMT->Data[i] > max)
 		{
 			max = PMT->Data[i];
@@ -40,17 +43,18 @@ int PulseFinder::LocMaximum(int j, double &p)
 	return time;
 }
 
-double PulseFinder::Integrate(int j)
+double PulseFinder::Integrate(int j, double bw)
 {
 	double sum = 0;
 //	for (int i = j-shape/2; i < j+1+shape/2; i++)
 	for (int i = j-2; i < j+3; i++)
 	{
-		if ((i < 0) || (i > 40000)) continue;
+		if ((i < 0) || (i > wl)) continue;
 //		if (i == j) continue;	//Get rid of peak
 		sum += PMT->Data[i];
 	}
-	return sum > 0 ? sum : 0.001;
+	return sum > 0.001 ? bw*sum : bw*0.001;
+//	return bw*sum;
 }
 
 bool PulseFinder::OpenIns(std::string fname)
@@ -178,8 +182,8 @@ void PulseFinder::Save2DHist(int trg, int evt)
 	hTime->GetXaxis()->SetTitle("x");
 	hTime->GetYaxis()->SetTitle("z");
 
-	hEner->SetOption("COLZTEXT");
-	hTime->SetOption("COLZTEXT");
+	hEner->SetOption("COLZ10TEXT");
+	hTime->SetOption("COLZ10TEXT");
 
 	if (evt == 0)
 	{
@@ -223,26 +227,27 @@ void PulseFinder::Save2DHist(int trg, int evt)
 		std::cout << "hTime " << "max " << MaxM(mT);
 		std::cout << " min " << MinM(mT) << std::endl;
 	}
-	hTime->GetZaxis()->SetRangeUser(MinM(mT), MaxM(mT));
+	hTime->GetZaxis()->SetRangeUser(MinM(mT)-bw, MaxM(mT)+bw);
 	hTime->Write(ssName.str().c_str());
 }
 
 void PulseFinder::Print1DStats()
 {
 //	fout << "Trigger: " << trg << std::endl;
+	double tt = 0.000001*ntrg*bw*wl;
 	fout << std::endl << std::endl;
 	fout << "Event above " << thr_evt << ":\t";
         fout << hEvent->Integral(thr_evt, 60) << std::endl;
 	fout << "Signal:\t" << hSignl->GetMean() << " \\pm ";
 	fout << hSignl->GetMeanError() << ",\t";
 	fout << "Entries\t" << hSignl->GetEntries();
-	fout << " and rate of " << hSignl->GetEntries()/(360*0.00008) << " Hz\n";
+	fout << " and rate of " << hSignl->GetEntries()/tt << " Hz\n";
 	fout << hSignl->GetEntries() << std::endl;
 	fout << "Noise:\t" << hNoise->GetMean() << " \\pm ";
 	fout << hNoise->GetMeanError() << ",\t";
 	fout << "Entries\t" << hNoise->GetEntries() <<std::endl;
-	fout << "Rate total   \t" << hNoise->GetEntries()/(360*0.00008) << " Hz\n";
-	fout << "Rate per PMT \t" << hNoise->GetEntries()/(60*360*0.00008) << " Hz\n";
+	fout << "Rate total   \t" << hNoise->GetEntries()/tt << " Hz\n";
+	fout << "Rate per PMT \t" << hNoise->GetEntries()/(60*tt) << " Hz\n";
 	for (int i = 1; i < 61; i++)
 		fout << "PMT " << i << "  :\t" << mDR[i] << " Hz\n";
 }
@@ -337,7 +342,9 @@ void PulseFinder::SetConfig(std::string cfn)
 			if (var == "thr_evt") SetThrEvent(val);
 			if (var == "thr_sig") SetThrSignal(val);
 			if (var == "shape") SetShapingTime(val);
+			if (var == "sample") SetSample(val);
 			if (var == "binwid") SetBW(val);
+			if (var == "winlength") SetWinLen(val);
 		}
 	}
 	std::cout << "Verbosity is " << verb << std::endl;
@@ -347,6 +354,8 @@ void PulseFinder::SetConfig(std::string cfn)
 		std::cout << "Debugging mode on\nWARNING: plots will be overwritten" << std::endl;
 	else std::cout << "Debugging mode off\nNew plots will be created" << std::endl;
 	fin.close();
+	std::cout << "bw " << bw << std::endl;
+	std::cout << "wl " << wl << std::endl;
 }
 
 void PulseFinder::SetThrPeak(double thr)
@@ -376,7 +385,17 @@ void PulseFinder::SetShapingTime(int sha)
 
 void PulseFinder::SetBW(double binw)
 {
-	bw = binw;
+	bw = GetSample()*binw;
+}
+
+void PulseFinder::SetWinLen(int thr)
+{
+	wl = thr/GetSample();
+}
+
+void PulseFinder::SetSample(int thr)
+{
+	sample = thr;
 }
 
 double PulseFinder::GetThrPeak()
@@ -407,6 +426,21 @@ int PulseFinder::GetShapingTime()
 double PulseFinder::GetBW()
 {
 	return bw;
+}
+
+int PulseFinder::GetWinLen()
+{
+	return wl;
+}
+
+int PulseFinder::GetSample()
+{
+	return sample;
+}
+
+int PulseFinder::GetNTrg()
+{
+	return ntrg;
 }
 
 void PulseFinder::SetDebug(int on)
@@ -449,10 +483,15 @@ V PulseFinder::MaxM(std::map<K, V> const &M)
 {
 	typename std::map<K, V>::const_iterator iM = M.begin();
 	V ret = iM->second;
+	K max = iM->first;
 
 	for ( ; iM != M.end(); iM++)
 		if (iM->second > ret)
+		{
 			ret = iM->second;
+			max = iM->first;
+		}
+	std::cout << "ID of the max is " << max << std::endl;
 	return ret;
 }
 
@@ -461,9 +500,14 @@ V PulseFinder::MinM(std::map<K, V> const &M)
 {
 	typename std::map<K, V>::const_iterator iM = M.begin();
 	V ret = iM->second;
+	K min = iM->first;
 
 	for ( ; iM != M.end(); iM++)
 		if (iM->second < ret)
+		{
 			ret = iM->second;
+			min = iM->first;
+		}
+	std::cout << "ID of the min is " << min << std::endl;
 	return ret;
 }

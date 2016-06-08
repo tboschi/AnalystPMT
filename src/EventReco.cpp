@@ -15,7 +15,7 @@ EventReco::EventReco(std::string cfn, PMTData *PMT, int ent, int bin, int rwm, i
 	{
 		if (i+tPeak-np < 0)
 			Pulse[i] = PMT->Data[i+tPeak-np+el];		//i == np -> tPeak
-		else if (i+tPeak-np >= 40000)
+		else if (i+tPeak-np >= wl)
 			Pulse[i] = PMT->Data[i+tPeak-np-el];		//i == np -> tPeak
 		else Pulse[i] = PMT->Data[i+tPeak-np];		//i == np -> tPeak
 	}
@@ -90,10 +90,11 @@ void EventReco::SetBL()		//Set to zero the avg of the first 20 points
 
 	Baseline = sum/20.0;
 
-	for (int i = 0; i < gPulse->GetN(); i++)
+	for (int i = 0; i < el; i++)
 	{
 		gPulse->GetPoint(i, x, y);
 		gPulse->SetPoint(i, x, y-Baseline);
+		Pulse[i] -= Baseline;
 	}
 }
 
@@ -137,15 +138,15 @@ void EventReco::SetCH()
 	double x, y, sum = 0;
 	for (int i = np-2; i < np+3; i++)
 		sum += Pulse[i];
-	Charge = sum;
+	Charge = sum*bw;
 }
 
 void EventReco::SetEN()
 {
 	double x, y, sum = 0;
-	for (int i = int(tCFD/bw)-10; i < int((tCFD+ZeroC)/bw)+10; i++)
+	for (int i = int(tCFD/bw)-1; i < int((tCFD+ZeroC)/bw)+1; i++)
 		sum += Pulse[i-tPeak+np];
-	Energy = sum;
+	Energy = sum*bw;
 }
 
 void EventReco::SetCFD()
@@ -160,14 +161,13 @@ void EventReco::SetCFD()
 	tCFD = CI(Pulse, ++x1, Peak*thr, 1);
 	tCFD += tPeak - np;
 	tCFD *= bw;
-/*
+
 	double x, y;
 	for (int i = 0; i < gPulse->GetN(); i++)
 	{
 		gPulse->GetPoint(i, x, y);
 		gPulse->SetPoint(i, x+bw*tPeak-tCFD, y);
 	}
-*/
 }
 
 void EventReco::SetZC()
@@ -184,13 +184,6 @@ void EventReco::SetZC()
 	ZeroC = CI(Pulse, ++x1, Peak*thr, 1);
 	ZeroC += tPeak - np;
 	ZeroC *= bw;
-	double x, y;
-	for (int i = 0; i < gPulse->GetN(); i++)
-	{
-		gPulse->GetPoint(i, x, y);
-		gPulse->SetPoint(i, x+bw*tPeak-ZeroC, y);
-	}
-
 	ZeroC -= tCFD;
 }
 
@@ -201,7 +194,7 @@ void EventReco::SetTOF()
 
 void EventReco::SetBW(double binw)
 {
-	bw = binw;
+	bw = binw*sample;
 }
 
 void EventReco::SetEL(int evnl)
@@ -209,48 +202,19 @@ void EventReco::SetEL(int evnl)
 	el = evnl;
 }
 
+void EventReco::SetWL(int evnl)
+{
+	wl = evnl/sample;
+}
+
+void EventReco::SetSample(int evnl)
+{
+	sample = evnl;
+}
+
 void EventReco::SetPC(double perc)
 {
 	pc = perc;
-}
-
-
-double EventReco::CI(double *data, int x2, double fmax, double tau)
-{
-	x2 -= 1;
-	double xi = (fmax - data[x2])/(data[x2+1] - data[x2]);
-	double a3 = 0.5*data[x2] - (1./6.)*data[x2-1] + (1./6.)*data[x2+2] - 0.5*data[x2+1];
-	double a2 = (-data[x2] + 0.5*data[x2+1] + 0.5*data[x2-1]);
-	double a1 = (-0.5*data[x2] - (1./6.)*data[x2+2] + data[x2+1] - 1./3.*data[x2-1]);
-	double a0 = data[x2];
-
-	for (int rec = 0; rec < 5; rec++)
-		 xi += (fmax - a0 - a1*xi - a2*xi*xi - a3*xi*xi*xi)/(a1 + 2*a2*xi + 3*a3*xi*xi);
-
-	return tau*(x2+xi);		//change to bw?
-}
-
-void EventReco::SetConfig(std::string cfn)
-{
-	std::ifstream fin(cfn.c_str());
-	std::string Line, var;
-	double val;
-	std::stringstream ssL;
-	while (getline(fin, Line))
-	{
-		if (Line[0] == '#') continue;
-		else
-		{
-			ssL.str("");
-			ssL.clear();
-			ssL << Line;
-			ssL >> var >> val;
-			if (var == "binwid") SetBW(val);
-			if (var == "evlength") SetEL(val);
-			if (var == "peakpos") SetPC(val);
-		}
-	}
-	fin.close();
 }
 
 double EventReco::GetBL()
@@ -328,7 +292,57 @@ int EventReco::GetEL()
 	return el;
 }
 
+int EventReco::GetWL()
+{
+	return wl;
+}
+
+int EventReco::GetSample()
+{
+	return wl;
+}
+
 double EventReco::GetPC()
 {
 	return pc;
+}
+
+double EventReco::CI(double *data, int x2, double fmax, double tau)
+{
+	x2 -= 1;
+	double xi = (fmax - data[x2])/(data[x2+1] - data[x2]);
+	double a3 = 0.5*data[x2] - (1./6.)*data[x2-1] + (1./6.)*data[x2+2] - 0.5*data[x2+1];
+	double a2 = (-data[x2] + 0.5*data[x2+1] + 0.5*data[x2-1]);
+	double a1 = (-0.5*data[x2] - (1./6.)*data[x2+2] + data[x2+1] - 1./3.*data[x2-1]);
+	double a0 = data[x2];
+
+	for (int rec = 0; rec < 5; rec++)
+		 xi += (fmax - a0 - a1*xi - a2*xi*xi - a3*xi*xi*xi)/(a1 + 2*a2*xi + 3*a3*xi*xi);
+
+	return tau*(x2+xi);		//change to bw?
+}
+
+void EventReco::SetConfig(std::string cfn)
+{
+	std::ifstream fin(cfn.c_str());
+	std::string Line, var;
+	double val;
+	std::stringstream ssL;
+	while (getline(fin, Line))
+	{
+		if (Line[0] == '#') continue;
+		else
+		{
+			ssL.str("");
+			ssL.clear();
+			ssL << Line;
+			ssL >> var >> val;
+			if (var == "binwid") SetBW(val);
+			if (var == "winlength") SetWL(val);
+			if (var == "sample") SetSample(val);
+			if (var == "evlength") SetEL(val);
+			if (var == "peakpos") SetPC(val);
+		}
+	}
+	fin.close();
 }

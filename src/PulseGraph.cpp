@@ -3,7 +3,7 @@
 void PulseFinder::SaveGraph()
 {
 	newF->cd("Event");
-
+/*
 	for (int i = 0; i < vER.size(); i++)
 	{
 
@@ -13,7 +13,7 @@ void PulseFinder::SaveGraph()
 			vER.at(i)->Print();
 		vER.at(i)->FillN(nEvent);
 	}
-
+*/
 	nEvent->Write();
 
 	gMean = new TGraph();
@@ -22,18 +22,18 @@ void PulseFinder::SaveGraph()
 	int cI = 0;
 	goRWM = new TGraph();
 	int cO = 0;
-	gDiff = new TGraph();
+//	gDiff = new TGraph();
 
 	for (int i = 0; i < vER.size(); i++)
 	{
 		ssName.str("");
 		ssName.clear();
-		ssName << "pulse_" << i << "_" << vER.at(i)->GetTRG();
+		ssName << "pulse_" << vER.at(i)->GetTRG();
 		ssName << "_" << vER.at(i)->GetID();
 		ssName << "_" << vER.at(i)->GetEVT();
 		gReco = vER.at(i)->GetGraph();
 		GraphAVG(gMean, cM);
-		if (fabs(vER.at(i)->GetTOF()-2) <= 3)
+		if (fabs(vER.at(i)->GetTOF()) <= 1)
 			GraphAVG(giRWM, cI);
 		else GraphAVG(goRWM, cO);
 
@@ -41,13 +41,12 @@ void PulseFinder::SaveGraph()
 		gReco->GetYaxis()->SetTitle("Data");
 		gReco->SetTitle("Pulse");
 
-		if (i % 100 == 0)
+//		if (i % 50 == 0)
 		{
 			gReco->Write(ssName.str().c_str());
-			gDiff = vER.at(i)->GetDeriv();
+//			gDiff = vER.at(i)->GetDeriv();
 			ssName << "_d";
-			gDiff->Write(ssName.str().c_str());
-			std::cout << "cross " << 0.05*vER.at(i)->GetPK() << std::endl;
+//			gDiff->Write(ssName.str().c_str());
 		}
 		delete vER.at(i);
 	}

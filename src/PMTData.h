@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Fri May 27 12:33:31 2016 by ROOT version 5.34/36
+// Mon Jun  6 15:22:56 2016 by ROOT version 6.06/00
 // from TTree PMTData/PMTData
-// found on file: test/DataR31S0p43T0May_15_23:03.root
+// found on file: test/DataR73S0p1T3Jun__1.root
 //////////////////////////////////////////////////////////
 
 #ifndef PMTData_h
@@ -14,18 +14,23 @@
 
 // Header file for the classes stored in the TTree if any.
 
-// Fixed size dimensions of array or collections stored in the TTree if any.
-
 class PMTData {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
 
+// Fixed size dimensions of array or collections stored in the TTree if any.
+
    // Declaration of leaf types
-   Long64_t        Trigger;
+   ULong64_t       Trigger;
    Int_t           LastSync;
    Int_t           SequenceID;
-   Int_t           StartTime;
+   Int_t           StartTimeSec;
+   Int_t           StartTimeNSec;
+   ULong64_t       StartCount;
+   Int_t           TriggerNumber;
+   ULong64_t       TriggerCounts[5];   //[TriggerNumber]
+   UInt_t          Rate;
    Int_t           CardID;
    Int_t           Channel;
    Int_t           PMTID;
@@ -40,7 +45,12 @@ public :
    TBranch        *b_Trigger;   //!
    TBranch        *b_LastSync;   //!
    TBranch        *b_SequenceID;   //!
-   TBranch        *b_StartTime;   //!
+   TBranch        *b_StartTimeSec;   //!
+   TBranch        *b_StartTimeNSec;   //!
+   TBranch        *b_StartCount;   //!
+   TBranch        *b_TriggerNumber;   //!
+   TBranch        *b_TriggerCounts;   //!
+   TBranch        *b_Rate;   //!
    TBranch        *b_CardID;   //!
    TBranch        *b_Channel;   //!
    TBranch        *b_PMTID;   //!
@@ -70,9 +80,9 @@ PMTData::PMTData(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("test/DataR31S0p43T0May_15_23:03.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("test/DataR73S0p1T3Jun__1.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("test/DataR31S0p43T0May_15_23:03.root");
+         f = new TFile("test/DataR73S0p1T3Jun__1.root");
       }
       f->GetObject("PMTData",tree);
 
@@ -124,7 +134,12 @@ void PMTData::Init(TTree *tree)
    fChain->SetBranchAddress("Trigger", &Trigger, &b_Trigger);
    fChain->SetBranchAddress("LastSync", &LastSync, &b_LastSync);
    fChain->SetBranchAddress("SequenceID", &SequenceID, &b_SequenceID);
-   fChain->SetBranchAddress("StartTime", &StartTime, &b_StartTime);
+   fChain->SetBranchAddress("StartTimeSec", &StartTimeSec, &b_StartTimeSec);
+   fChain->SetBranchAddress("StartTimeNSec", &StartTimeNSec, &b_StartTimeNSec);
+   fChain->SetBranchAddress("StartCount", &StartCount, &b_StartCount);
+   fChain->SetBranchAddress("TriggerNumber", &TriggerNumber, &b_TriggerNumber);
+   fChain->SetBranchAddress("TriggerCounts", TriggerCounts, &b_TriggerCounts);
+   fChain->SetBranchAddress("Rate", &Rate, &b_Rate);
    fChain->SetBranchAddress("CardID", &CardID, &b_CardID);
    fChain->SetBranchAddress("Channel", &Channel, &b_Channel);
    fChain->SetBranchAddress("PMTID", &PMTID, &b_PMTID);
