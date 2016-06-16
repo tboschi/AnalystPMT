@@ -499,7 +499,6 @@ V PulseFinder::MaxM(std::map<K, V> const &M)
 			ret = iM->second;
 			max = iM->first;
 		}
-	std::cout << "ID of the max is " << max << std::endl;
 	return ret;
 }
 
@@ -516,6 +515,5 @@ V PulseFinder::MinM(std::map<K, V> const &M)
 			ret = iM->second;
 			min = iM->first;
 		}
-	std::cout << "ID of the min is " << min << std::endl;
 	return ret;
 }

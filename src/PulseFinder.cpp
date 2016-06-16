@@ -107,6 +107,7 @@ void PulseFinder::LoopPMT(int trg, int spl)
 	vPos.clear();
 	vID.clear();
 	vEntry.clear();
+	RWM = 0;
 
 	for (int j = 0; j < 256; j += sample)
 	{
@@ -196,7 +197,7 @@ void PulseFinder::FindPulses(int ent, int spl)
 void PulseFinder::FindEvents(int trg, int spl)
 {
 	if (verb)
-		std::cout << "Looking for events...\n";
+		std::cout << "Looking for events in trigger " << trg << "...\n";
 	double b, b_, thr = thr_evt;
 	vEvt.clear();
 	for (int i = 0; i < 0.1*wl; i++)
@@ -252,7 +253,7 @@ void PulseFinder::CatchEvents(int trg, int spl, int evt)	//And Event Reco
 		{
 			if (graph)
 			{
-				std::cout << "t " << vT.at(j) << "\tb " << vBin.at(j) << std::endl;
+//				std::cout << "t " << vT.at(j) << "\tb " << vBin.at(j) << std::endl;
 				ers = vER.size();
 				vER.push_back(new EventReco(ConfigFile, PMT, vEntry.at(j), vBin.at(j), RWM, trg, ID, evt));
 				vER.at(ers)->LoadGraph();
@@ -277,7 +278,7 @@ void PulseFinder::CatchEvents(int trg, int spl, int evt)	//And Event Reco
 					mPos[ID].x = vPos.at(j).x;
 					mPos[ID].z = vPos.at(j).z;
 				}
-//			if (verb > 2)
+			if (verb > 2)
 			{
 				std::cout << "Evt  " << vEvt.at(evt) << "\t";
 				std::cout << "ID   " << ID << "\t";
@@ -300,7 +301,6 @@ void PulseFinder::FillEvents(int trg, int spl, int evt)
 	double peak;
 
 	int k = vEvt.at(evt)/bw;
-	std::cout << "pos of Evt " << k << "\t" << k*bw << std::endl;
 
 	for (int j = 0; j < 256; j += sample)
 	{
@@ -315,7 +315,7 @@ void PulseFinder::FillEvents(int trg, int spl, int evt)
 			mI[ID] = Integrate(time, graph ? bw*100/sample : bw);
 			mPos[ID].x = PMT->PMTx;
 			mPos[ID].z = PMT->PMTz;
-//			if (verb > 2)
+			if (verb > 2)
 			{
 				std::cout << "Evt  " << vEvt.at(evt) << "\t";
 				std::cout << "ID   " << ID << "\t";
@@ -325,7 +325,7 @@ void PulseFinder::FillEvents(int trg, int spl, int evt)
 				std::cout << "z    " << mPos[ID].z << std::endl;
 			}
 		}
-		else std::cout << "ID   " << ID << std::endl;
+//		else std::cout << "ID   " << ID << std::endl;
 	}
 }
 

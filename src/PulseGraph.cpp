@@ -49,13 +49,15 @@ void PulseFinder::SaveGraph()
 		gReco->GetYaxis()->SetTitle("Data");
 		gReco->SetTitle("Pulse");
 
-//		if (i % 50 == 0)
+		if (i % 50 == 0)
 		{
 			gReco->Write(ssName.str().c_str());
 //			gDiff = vER.at(i)->GetDeriv();
 			ssName << "_d";
 //			gDiff->Write(ssName.str().c_str());
 		}
+		std::cout << "val " << vER.at(i)->GettVL() << "\t";
+		std::cout << vER.at(i)->GettVL()*vER.at(i)->GetBW() << std::endl;
 		delete vER.at(i);
 	}
 
