@@ -59,7 +59,7 @@ double PulseFinder::Integrate(int j, double bw)
 
 bool PulseFinder::OpenIns(std::string fname)
 {
-	oldF = new TFile(fname.c_str(), "UPDATE");		//open file -> should be a loop on vector
+	oldF = new TFile(fname.c_str(), "READ");		//open file -> should be a loop on vector
 	if (oldF->IsZombie()) 
 	{
 		std::cout << "ZOMBIE!\n";
