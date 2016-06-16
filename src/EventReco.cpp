@@ -322,8 +322,9 @@ double EventReco::CI(double *data, int x2, double fmax, double tau)
 	return tau*(x2+xi);		//change to bw?
 }
 
-void EventReco::SetConfig(std::string cfn)
+void PulseFinder::SetConfig(std::string cfn)
 {
+	ConfigFile = cfn;
 	std::ifstream fin(cfn.c_str());
 	std::string Line, var;
 	double val;
@@ -337,12 +338,28 @@ void EventReco::SetConfig(std::string cfn)
 			ssL.clear();
 			ssL << Line;
 			ssL >> var >> val;
-			if (var == "binwid") SetBW(val);
-			if (var == "winlength") SetWL(val);
+			if (var == "debug") SetDebug(val);
+			if (var == "graph") SetGraph(val);
+			if (var == "concurr") SetConcurr(val);
+			if (var == "verb") SetVerbosity(val);
+			if (var == "thr_pek") SetThrPeak(val); 
+			if (var == "r_hys") SetThrHyst(val); 
+			if (var == "thr_evt") SetThrEvent(val);
+			if (var == "thr_sig") SetThrSignal(val);
+			if (var == "shape") SetShapingTime(val);
 			if (var == "sample") SetSample(val);
-			if (var == "evlength") SetEL(val);
-			if (var == "peakpos") SetPC(val);
+			if (var == "binwid") SetBW(val);
+			if (var == "winlength") SetWinLen(val);
 		}
 	}
+	std::cout << "Verbosity is " << verb << std::endl;
+	if (graph)
+		std::cout << "Individual pulse analysis will be made" << std::endl;
+	if (debug)
+		std::cout << "Debugging mode on\nWARNING: plots will be overwritten" << std::endl;
+	else std::cout << "Debugging mode off\nNew plots will be created" << std::endl;
 	fin.close();
+	std::cout << "bw " << bw << std::endl;
+	std::cout << "wl " << wl << std::endl;
 }
+

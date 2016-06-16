@@ -154,6 +154,8 @@ void PulseFinder::FindPulses(int ent, int spl)
 			pos.x = PMT->PMTx;
 			pos.z = PMT->PMTz;
 
+			ER = new EventReco(ConfigFile, PMT, vEntry.at(j), vBin.at(j), RWM, trg, ID, evt);
+
 			//sync push back
 			vPos.push_back(pos);		//PMT location
 			vI.push_back(ener);		//ener of pulse

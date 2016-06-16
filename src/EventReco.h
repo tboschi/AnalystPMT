@@ -50,6 +50,8 @@ class EventReco
 		void SetSample(int evnl);	//Sample of digitiser
 		void SetPC(double perc);	//Peak pos in percent
 		double CI(double *data, int x2, double fmax, double tau);
+		int LocMaximum(int j, double &p);
+		double Integrate(int j, double bw = 1);
 		double GetBL();
 		double GetPK();
 		double GettPK();

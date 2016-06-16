@@ -39,7 +39,15 @@ struct Coord
 	int z;
 };
 
-class PulseFinder
+struct Analysis
+{
+	double E;	//Energy
+	double T;	//Time
+	double P;	//Peak
+	double W;	//Width
+}
+
+class PulseFinder : public EventReco
 {
 	public:
 		PulseFinder(std::string dir = ".");
@@ -58,8 +66,6 @@ class PulseFinder
 		void Save1DHist();
 		void SaveGraph();
 		void GraphAVG(TGraph *g, int &cc);
-		int LocMaximum(int j, double &p);
-		double Integrate(int j, double bw = 1);
 		bool OpenIns(std::string fname);
 		bool OpenOuts(std::string fname);
 		void GetTree();
@@ -148,6 +154,9 @@ class PulseFinder
 		int RWM;
 
 		std::string ConfigFile;		//Utilities
+
+		std::map<int, std::vector<Analysis> > mPulse;
+
 };
 
 #endif
