@@ -227,7 +227,7 @@ void PulseFinder::Save2DHist(int trg, int evt)
 		std::cout << "hTime " << "max " << MaxM(mT);
 		std::cout << " min " << MinM(mT) << std::endl;
 	}
-	hTime->GetZaxis()->SetRangeUser(MinM(mT)-bw, MaxM(mT)+bw);
+	hTime->GetZaxis()->SetRangeUser(MinM(mT)-10*bw, MaxM(mT)+10*bw);
 	hTime->Write(ssName.str().c_str());
 }
 
