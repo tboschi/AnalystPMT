@@ -16,12 +16,17 @@ void PulseFinder::SaveGraph()
 */
 	nEvent->Write();
 
-	gMean = new TGraph();
+	bool con = concurr >= 0;
 	int cM = 0;
-	giRWM = new TGraph();
 	int cI = 0;
-	goRWM = new TGraph();
 	int cO = 0;
+
+	gMean = new TGraph();
+	if (con)
+	{
+		giRWM = new TGraph();
+		goRWM = new TGraph();
+	}
 //	gDiff = new TGraph();
 
 	for (int i = 0; i < vER.size(); i++)
@@ -33,9 +38,12 @@ void PulseFinder::SaveGraph()
 		ssName << "_" << vER.at(i)->GetEVT();
 		gReco = vER.at(i)->GetGraph();
 		GraphAVG(gMean, cM);
-		if (fabs(vER.at(i)->GetTOF()) <= 1)
-			GraphAVG(giRWM, cI);
-		else GraphAVG(goRWM, cO);
+		if (con)
+		{
+			if (fabs(vER.at(i)->GetTOF()) <= 1)
+				GraphAVG(giRWM, cI);
+			else GraphAVG(goRWM, cO);
+		}
 
 		gReco->GetXaxis()->SetTitle("time");
 		gReco->GetYaxis()->SetTitle("Data");
@@ -59,26 +67,35 @@ void PulseFinder::SaveGraph()
 	gMean->SetLineColor(1);
 	gMean->Write("gmean");
 
-	giRWM->GetXaxis()->SetTitle("time");
-	giRWM->GetYaxis()->SetTitle("Data");
-	giRWM->SetTitle("Coincidence pulse");
-	giRWM->SetLineColor(2);
-	giRWM->Write("girwm");
+	if (con)
+	{
+		giRWM->GetXaxis()->SetTitle("time");
+		giRWM->GetYaxis()->SetTitle("Data");
+		giRWM->SetTitle("Coincidence pulse");
+		giRWM->SetLineColor(2);
+		giRWM->Write("girwm");
 
-	goRWM->GetXaxis()->SetTitle("time");
-	goRWM->GetYaxis()->SetTitle("Data");
-	goRWM->SetTitle("Not Coincidence pulse");
-	goRWM->SetLineColor(4);
-	goRWM->Write("gorwm");
-
+		goRWM->GetXaxis()->SetTitle("time");
+		goRWM->GetYaxis()->SetTitle("Data");
+		goRWM->SetTitle("Not Coincidence pulse");
+		goRWM->SetLineColor(4);
+		goRWM->Write("gorwm");
+	}
 
 	std::cout << "cM " << cM << std::endl;
-	std::cout << "cI " << cI << std::endl;
-	std::cout << "cO " << cO << std::endl;
+	if (con)
+	{
+		std::cout << "cI " << cI << std::endl;
+		std::cout << "cO " << cO << std::endl;
+	}
+
 	delete gMean;
-	delete giRWM;
-	delete goRWM;
-	delete gDiff;
+	if (con)
+	{
+		delete giRWM;
+		delete goRWM;
+	}
+//	delete gDiff;
 
 }
 

@@ -336,6 +336,7 @@ void PulseFinder::SetConfig(std::string cfn)
 			ssL >> var >> val;
 			if (var == "debug") SetDebug(val);
 			if (var == "graph") SetGraph(val);
+			if (var == "concurr") SetConcurr(val);
 			if (var == "verb") SetVerbosity(val);
 			if (var == "thr_pek") SetThrPeak(val); 
 			if (var == "r_hys") SetThrHyst(val); 
@@ -398,6 +399,28 @@ void PulseFinder::SetSample(int thr)
 	sample = thr;
 }
 
+void PulseFinder::SetDebug(int on)
+{
+	debug = on;
+}
+
+void PulseFinder::SetGraph(int on)
+{
+	graph = on;
+}
+
+void PulseFinder::SetConcurr(double on)
+{
+	concurr = on;
+}
+
+void PulseFinder::SetVerbosity(int on)
+{
+	verb = on;
+}
+
+
+
 double PulseFinder::GetThrPeak()
 {
 	return thr_pek;
@@ -441,21 +464,6 @@ int PulseFinder::GetSample()
 int PulseFinder::GetNTrg()
 {
 	return ntrg;
-}
-
-void PulseFinder::SetDebug(int on)
-{
-	debug = on;
-}
-
-void PulseFinder::SetGraph(int on)
-{
-	graph = on;
-}
-
-void PulseFinder::SetVerbosity(int on)
-{
-	verb = on;
 }
 
 template<typename T>

@@ -9,6 +9,7 @@
 #shape is the time window, for peak and energy computation
 #binwid is the time calibration of Data bin width
 #graph is 1 for shape analysis, 0 for skipping it (requires some postprocessing resources)
+#concurr is -1 for not coincidence average, greater than 0 plot coincidence average
 #evlength is the bin size of Data for shape analysis
 #peakpos is the position of the peak in the evlength window, in percent
 debug 1
@@ -22,5 +23,6 @@ sample 4
 binwid 0.002
 winlength 40000
 graph 1
+concurr -1
 evlength 500
 peakpos 20

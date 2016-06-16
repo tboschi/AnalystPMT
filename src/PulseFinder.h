@@ -95,6 +95,7 @@ class PulseFinder
 		void SetPC(double perc = 10);
 		void SetDebug(int on = 0);
 		void SetGraph(int on = 1);
+		void SetConcurr(double on = -1);
 		void SetVerbosity(int on = 0);
 		template<typename T> T MaxV(std::vector<T> &V);
 		template<typename T> T MinV(std::vector<T> &V);
@@ -121,6 +122,7 @@ class PulseFinder
 		int verb;	//Verbosity level
 		bool debug;	//Debuggin option
 		bool graph;	//Shape analysis option
+		double concurr;	//Coindicende time window, if negative no coincidence
 
 		int mc;		//Multipurpose counter
 
