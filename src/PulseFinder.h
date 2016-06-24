@@ -89,6 +89,16 @@ class PulseFinder
 		TH2F *h2Ener, *h2Time, *h2Peak, *h2Widt, *h2Dark;
 
 		TGraph *gPulse, *gMean, *giTOF, *goTOF;
+
+		TTree *tEvent;
+		float fBaseLine;
+		float fPeak;
+		float fValley;
+		float fTime;
+		float fWidth;
+		float fCharge;
+		float fEnergy;
+		float fTOF;
 };
 
 #endif

@@ -8,7 +8,6 @@
 #include "PMTData.h"
 #include "Utils.h"
 
-#include "Event.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TFile.h"
@@ -16,7 +15,7 @@
 #include "TGraph.h"
 #include "TTree.h"
 #include "TNtuple.h"
-#include "TList.h"
+#include "TChain.h"
 #include "TDirectory.h"
 
 int main(int argc, char **argv)
@@ -77,13 +76,34 @@ int main(int argc, char **argv)
 	TH1F *tWidth = new TH1F("twidth", "zero cross", 250, -1, 4);
 	TH1F *tCharge = new TH1F("tcharge", "charge", 250, -0.03, 0.13);
 	TH1F *tEnergy = new TH1F("tenergy", "energy", 250, -0.05, 0.25);
-	TH1F *tTOF = new TH1F("ttof", "time of flight", nbins, 0, xrange);
+	TH1F *tTOF = new TH1F("ttof", "time of flight", nbins, -xrange, xrange);
 
 	TH2F *t2Dark = new TH2F("t2dark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 
 	TGraph *tMean = new TGraph(Utl->GetEvtLength());
 	TGraph *tiTOF = new TGraph(Utl->GetEvtLength());
 	TGraph *toTOF = new TGraph(Utl->GetEvtLength());
+
+/*	TTree *tTreeEvent = new TTree("tEvent", "Event's pulses tree container");
+
+	float fBaseLine;
+	float fPeak;
+	float fValley;
+	float fTime;
+	float fWidth;
+	float fCharge;
+	float fEnergy;
+	float fTOF;
+
+	tEvent->Branch("Baseline", &fBaseLine, "fBaseLine/F");
+	tEvent->Branch("Peak", &fPeak, "fPeak/F");
+	tEvent->Branch("P2V", &fValley, "fValley/F");
+	tEvent->Branch("Time", &fTime, "fTime/F");
+	tEvent->Branch("Width", &fWidth, "fWidth/F");
+	tEvent->Branch("Charge", &fCharge, "fCharge/F");
+	tEvent->Branch("Energy", &fEnergy, "fEnergy/F");
+	tEvent->Branch("TOF", &fTOF, "fTOF/F");
+*/
 
 	//Old onjects to catch
 	TH1F *hPfile;
@@ -103,8 +123,10 @@ int main(int argc, char **argv)
 	TGraph *gMean;
 	TGraph *giTOF;
 	TGraph *goTOF;
+	TTree *tTree;
 
 	TDirectory * dir;
+	TChain *tDaisy = new TChain("tEvent");
 
 	for (int v = 0; v < RF_In.size(); v++)
 	{
@@ -117,9 +139,11 @@ int main(int argc, char **argv)
 //		dir->GetObject("nevent", nevent);
 //		TList *tlist;
 
-//		tlist->Add(nevent);
+//		dir = (TDirectory*) Utl->InFile->Get("");
+//		dir->GetObject("tevent", tevent);
+//		tTree = (TTree*) Utl->InFile->Get("tevent");
+		tDaisy->Add(Utl->InFile->GetName());
 
-	
 		hBaseLine = (TH1F*) Utl->InFile->Get("hbaseline");
 		hPeak = (TH1F*) Utl->InFile->Get("hpeak");
 		hValley = (TH1F*) Utl->InFile->Get("hvalley");
@@ -171,12 +195,12 @@ int main(int argc, char **argv)
 
 //Write
 
-	outF->cd();
 
 	//Tree
-//	TTree *tEv = TTree::MergeTrees(tlist);
-//	tEv->SetName("tevreco");
+//	TTree *tTreeEvent = TTree::MergeTrees(tList);
+//	tTreeEvent->SetName("tEvent");
 
+	outF->cd();
 	//Histograms
 	tPfile->SetStats(kFALSE);
 	tEvent->SetStats(kTRUE);
@@ -203,6 +227,8 @@ int main(int argc, char **argv)
 	tiTOF->SetTitle("In coincidence");
 	toTOF->SetTitle("Out coincidence");
 
+//	tTreeEvent->Write();
+
 	tBaseLine->Write();
 	tPeak->Write();
 	tValley->Write();
@@ -217,13 +243,15 @@ int main(int argc, char **argv)
 	tEntry->Write();
 	tBinWd->Write();
 	t2Dark->Write();
-	tMean->Write();
-	tiTOF->Write();
-	toTOF->Write();
+	tMean->Write("tMean");
+	tiTOF->Write("tiTOF");
+	toTOF->Write("toTOF");
 
-	std::cout << std::endl;
+	std::cout << "asd0\n";
+	tDaisy->Merge(outF, 1000);
+	std::cout << "asd1\n";
 
-	outF->Close();
+//	outF->Close();
 	Utl->InFile->Close();
 
 	return 0;

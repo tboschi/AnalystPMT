@@ -15,7 +15,7 @@
 #eventlength is the bin size of graph window
 
 debug 1
-verbosity 2
+verbosity 1
 hysratio 0
 thrpeak 0.02
 trhevent 10

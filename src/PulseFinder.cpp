@@ -4,7 +4,6 @@
 PulseFinder::PulseFinder()
 {
 	Utl = Utl->GetUtils();
-	std::cout << "From PF " << Utl << std::endl;
 
 	iVerb = Utl->GetVerbosity();
 	fBW = Utl->GetBinWidth();
@@ -72,7 +71,7 @@ void PulseFinder::LoopTrg()
 //			for (int j = (vEvt.size() > 0 ? 0 : -1); j < int(vEvt.size()); j++)
 			if (vEvt.size() == 0)
 			{
-				if (iVerb)
+				if (iVerb > 1)
 					std::cout << "Event -1" << std::endl;
 
 				LoopEvents(Trg0, -1);
@@ -80,7 +79,7 @@ void PulseFinder::LoopTrg()
 			}
 			for (int j = 0; j < vEvt.size(); j++)
 			{
-				if (iVerb)
+				if (iVerb > 1)
 					std::cout << "Event " << j << std::endl;
 	
 				LoopEvents(Trg0, j);
@@ -180,7 +179,7 @@ void PulseFinder::FindPulses(int ent)
 void PulseFinder::FindEvents(int trg)
 {
 	if (iVerb)
-		std::cout << "Looking for events in trigger " << trg << "...\n";
+		std::cout << "Looking for events...\n";
 	int b, b_, tBIN = 0, bc = 0;
 	double thr = Utl->GetThrEvent();
 	double tAVG = 0, tPOS = 0;
@@ -236,7 +235,7 @@ void PulseFinder::FindEvents(int trg)
 void PulseFinder::LoopEvents(int trg, int evt)
 {
 	if (iVerb)
-		std::cout << "Looping over the events... " << evt << std::endl;
+		std::cout << "Looping over " << evt << " the events...\n";
 
 	vE.clear();
 	vT.clear();
@@ -375,16 +374,26 @@ void PulseFinder::Fill1DHist(EventReco *ER)
 		}
 	
 */	
+	fBaseLine = ER->GetBaseLine();
+	fPeak = ER->GetPeak();
+	fValley = ER->GettP2V();
+	fTime = ER->GettCFD();
+	fWidth = ER->GetZeroC();
+	fCharge = ER->GetCharge();
+	fEnergy = ER->GetEnergy();
+	fTOF = ER->GetTOF();
 
-	hBaseLine->Fill(ER->GetBaseLine());
-	hPeak->Fill(ER->GetPeak());
-	hValley->Fill(ER->GettP2V());
-	hTime->Fill(ER->GettCFD());
-	hWidth->Fill(ER->GetZeroC());
-	hCharge->Fill(ER->GetCharge());
-	hEnergy->Fill(ER->GetEnergy());
-	hTOF->Fill(ER->GetTOF());
-}		
+	hBaseLine->Fill(fBaseLine);
+	hPeak->Fill(fPeak);
+	hValley->Fill(fValley);
+	hTime->Fill(fTime);
+	hWidth->Fill(fWidth);
+	hCharge->Fill(fCharge);
+	hEnergy->Fill(fEnergy);
+	hTOF->Fill(fTOF);
+
+	tEvent->Fill();
+}
 
 void PulseFinder::Fill2DHist(int ID, Analysis Par)
 {
@@ -401,34 +410,43 @@ void PulseFinder::NewHist()
 {
 	double xrange = Utl->GetBuffer()*fBW;
 	int nbins = int(0.1*Utl->GetBuffer());
-	hPulse = new TH1F("hpulse", "pulses", nbins, 0, xrange);
-	hPtrig = new TH1F("hptrig", "pulses in trigger", nbins/10, 0, xrange);
-	hPfile = new TH1F("hpfile", "pulses in file", nbins, 0, xrange);	
-	hEvent = new TH1F("hevent", "events freq", nbins/20, 0, xrange);
-	hEntry = new TH1F("hentry", "entries freq", nbins/20, 0, xrange);
-	hBinWd = new TH1F("hbinwd", "event width", 40, 0, 8);
+	hPulse = new TH1F("hpulse", "Pulses", nbins, 0, xrange);
+	hPtrig = new TH1F("hptrig", "Pulses in trigger", nbins/10, 0, xrange);
+	hPfile = new TH1F("hpfile", "Pulses in file", nbins, 0, xrange);	
+	hEvent = new TH1F("hevent", "Events freq", nbins/20, 0, xrange);
+	hEntry = new TH1F("hentry", "Entries freq", nbins/20, 0, xrange);
+	hBinWd = new TH1F("hbinwd", "Event width", 40, 0, 8);
 
 //	nEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
 
 	hBaseLine = new TH1F("hbaseline", "Baseline", 250, -0.005, 0.005);
 	hPeak = new TH1F("hpeak", "Peak", 250, 0, 5);
 	hValley = new TH1F("hvalley", "Valley from peak", 250, -1, 4);
-	hTime = new TH1F("htime", "time", nbins, 0, xrange);
-	hWidth = new TH1F("hwidth", "zero cross", 250, -1, 4);
-	hCharge = new TH1F("hcharge", "charge", 250, -0.03, 0.13);
-	hEnergy = new TH1F("henergy", "energy", 250, -0.05, 0.25);
-	hTOF = new TH1F("htof", "time of flight", nbins, 0, xrange);
+	hTime = new TH1F("htime", "Time", nbins, 0, xrange);
+	hWidth = new TH1F("hwidth", "Pulse width", 250, -1, 4);
+	hCharge = new TH1F("hcharge", "Charge", 250, -0.03, 0.13);
+	hEnergy = new TH1F("henergy", "Energy", 250, -0.05, 0.25);
+	hTOF = new TH1F("htof", "Time of flight", nbins, -xrange, xrange);
 
-	h2Ener = new TH2F("h2ener", "energy", 8, -0.5, 7.5, 8, -0.5, 7.5);
-	h2Time = new TH2F("h2time", "time", 8, -0.5, 7.5, 8, -0.5, 7.5);
-	h2Peak = new TH2F("h2peak", "peak", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	h2Ener = new TH2F("h2ener", "Energy", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	h2Time = new TH2F("h2time", "Time", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	h2Peak = new TH2F("h2peak", "Peak", 8, -0.5, 7.5, 8, -0.5, 7.5);
 //	h2Widt = new TH2F("h2widt", "width", 8, -0.5, 7.5, 8, -0.5, 7.5);
-	h2Dark = new TH2F("h2dark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	h2Dark = new TH2F("h2dark", "Dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 
 	gMean = new TGraph(Utl->GetEvtLength());
 	giTOF = new TGraph(Utl->GetEvtLength());
 	goTOF = new TGraph(Utl->GetEvtLength());
 
+	tEvent = new TTree("tEvent", "Event's pulses tree container");
+	tEvent->Branch("baseline", &fBaseLine, "fBaseLine/F");
+	tEvent->Branch("peak", &fPeak, "fPeak/F");
+	tEvent->Branch("P2V", &fValley, "fValley/F");
+	tEvent->Branch("time", &fTime, "fTime/F");
+	tEvent->Branch("width", &fWidth, "fWidth/F");
+	tEvent->Branch("vharge", &fCharge, "fCharge/F");
+	tEvent->Branch("cnergy", &fEnergy, "fEnergy/F");
+	tEvent->Branch("TOF", &fTOF, "fTOF/F");
 }
 
 void PulseFinder::FillDRHist()
@@ -497,6 +515,8 @@ void PulseFinder::Save_Hist()
 	gMean->SetTitle("Average");
 	giTOF->SetTitle("In coincidence");
 	goTOF->SetTitle("Out coincidence");
+
+	tEvent->Write();
 
 	hBaseLine->Write();
 	hPeak->Write();

@@ -133,7 +133,7 @@ bool Utils::OpenOuts(std::string fname)
 
 void Utils::GetTree()
 {
-	bool IsTree = false;
+	bool IsPMTData = false;
 	InFile->cd();
 	TIter nextkey(InFile->GetListOfKeys());		//Get first tree on each file
 	TKey *key;
@@ -144,15 +144,16 @@ void Utils::GetTree()
 		if (obj->IsA()->InheritsFrom(TTree::Class()))
 		{
 			TreeData = (TTree*)obj;		//assign found tree to TreeData
-			IsTree = true;
+			std::string TreeName = "PMTData";
+			if (TreeData->GetName() == TreeName)
+				IsPMTData = true;
 			break;
 		}
 	}
 
 	//Create object PMT
-	if (IsTree) PMT = new PMTData(TreeData);
+	if (IsPMTData) PMT = new PMTData(TreeData);
 	else PMT = 0;
-	std::cout << "PMT is " << PMT << std::endl;
 }
 
 bool Utils::Exist(std::string &fileName)
@@ -219,7 +220,6 @@ void Utils::Close()
 	InFile->Close();
 	OutFile->Close();
 	fout.close();
-	std::cout << " PMT 1 " << GetPMT();
 //	delete GetPMT();
 }
 
