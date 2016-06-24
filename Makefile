@@ -16,10 +16,10 @@ OUT = Main
 all: clean cpinclude pulse merge
 
 pulse: clean cpinclude
-	g++ $(IN) src/PMTData.C $(SRC)PulseFinder.cpp $(SRC)PulseUtils.cpp $(SRC)PulseGraph.cpp $(SRC)EventReco.cpp -fPIC -I $(INC) $(CFLAG) -o PulseFinder
+	g++ $(IN) $(SRC)PMTData.C $(SRC)Utils.cpp $(SRC)EventReco.cpp $(SRC)PulseFinder.cpp -fPIC -I $(INC) $(CFLAG) -o $(OUT)
 
 merge: clean cpinclude
-	g++ src/Merge.cpp -fPIC -I $(INC) $(CFLAG) -o Merge
+	g++ $(SRC)PMTData.C $(SRC)Utils.cpp $(SRC)Merge.cpp -fPIC -I $(INC) $(CFLAG) -o Merge
 
 clean:
 	rm -f $(OUT)
@@ -29,6 +29,7 @@ clean:
 
 cpinclude:
 	cp $(SRC)PMTData.h inc/
+	cp $(SRC)Utils.h inc/
 	cp $(SRC)PulseFinder.h inc/
 	cp $(SRC)EventReco.h inc/
 
