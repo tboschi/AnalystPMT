@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
 
+#include "Utils.h"
 #include "PulseFinder.h"
+#include "EventReco.h"
 
 int main(int argc, char** argv)
 {
@@ -15,13 +17,14 @@ int main(int argc, char** argv)
 	ssL.clear();
 	ssL << "mkdir -p ";
 	ssL << fold << "/result";
+	std::cout << ssL.str() << std::endl;
 	system(ssL.str().c_str());
 
 	ssL.str("");
 	ssL.clear();
 	ssL << "find ";
 	ssL << fold;
-       	ssL << " -maxdepth 1 -name \"*.root*\" > rootfiles.list";
+       	ssL << " -maxdepth 1 -name \"Data*.root*\" > rootfiles.list";
 	std::cout << ssL.str() << std::endl;
 	system(ssL.str().c_str());
 
@@ -39,20 +42,31 @@ int main(int argc, char** argv)
 	}
 	fin.close();
 
-	PulseFinder *PF; 
+	Utils *Handler = Utils::GetUtils(); 
+	Handler->SetDir(fold);
+	Handler->SetConfig("config");
+
 	for (int i = 0; i < RF_In.size(); i++)
 	{
-		PF = new PulseFinder(fold);
 		
-		PF->SetConfig("config");
-		if (PF->OpenIns(RF_In.at(i)))
-			if (PF->OpenOuts(RF_In.at(i)))
-			{
-				PF->GetTree();
-				PF->LoopTrg();
-				delete PF;
-			}
+		if (Handler->OpenIns(RF_In.at(i)))
+			if (Handler->OpenOuts(RF_In.at(i)))
+				PulseFinder PF;
+//			{
+//				std::cout << "f0 " << Handler->InFile->IsOpen() << std::endl;
+//				Handler->Close();
+//				std::cout << "f1\n";
+//			}
+
 	}
+
+	ssL.str("");
+	ssL.clear();
+	ssL << "./Merge ";
+	if (fold[fold.length()-1] == '/') ssL << fold << "result/";
+	else ssL << fold << "/result/";
+	std::cout << ssL.str() << std::endl;
+	system(ssL.str().c_str());
 
 	return 0;
 }

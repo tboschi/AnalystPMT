@@ -1,104 +1,107 @@
 #include "EventReco.h"
 
-EventReco::EventReco(std::string cfn, PMTData *PMT, int ent, int bin, int rwm, int trg, int id, int evt)
+EventReco::EventReco(int ent, int bin, int rwm)
 {
-	SetConfig(cfn);
-	RWM = rwm;			//rwm is RWM  pos
-	TRG = trg;			//trg is trigger number
-	EVT = evt;			//evt is event number
-	ID = id;			//id is pmt id
-	tPeak = bin;			//bin is position of peak in bins
-	np = int(el*pc*0.01);		//np is the Pulse position of peak
-	Pulse = new double[el];
-	PMT->GetEntry(ent);
-	for (int i = 0; i < el; i++)
+	Utl = Utils::GetUtils();
+	iEnt = ent;			//tree entry
+	iPeak = bin;			//bin is position of peak in bins
+	iRWM = rwm;			//rwm is RWM  pos
+
+	PMT = Utl->GetPMT();
+	PMT->GetEntry(GetEntry());
+
+	NewP = int(Utl->GetEvtLength()*Utl->GetPercent()*0.01);	//np is the Pulse position of peak
+	Pulse = new float[Utl->GetEvtLength()];
+	fBW = Utl->GetBinWidth();
+	iEL = Utl->GetEvtLength();
+//	PMT->GetEntry(ent);
+	for (int i = 0; i < Utl->GetEvtLength(); i++)
 	{
-		if (i+tPeak-np < 0)
-			Pulse[i] = PMT->Data[i+tPeak-np+el];		//i == np -> tPeak
-		else if (i+tPeak-np >= wl)
-			Pulse[i] = PMT->Data[i+tPeak-np-el];		//i == np -> tPeak
-		else Pulse[i] = PMT->Data[i+tPeak-np];		//i == np -> tPeak
+		if (i+GettPeak()-NewP < 0)
+			Pulse[i] = PMT->Data[i + GettPeak() - NewP + Utl->GetEvtLength()];	//i == np -> tPeak
+		else if (i+GettPeak()-NewP >= Utl->GetBuffer())
+			Pulse[i] = PMT->Data[i + GettPeak() - NewP - Utl->GetEvtLength()];
+		else Pulse[i] = PMT->Data[i+GettPeak()-NewP];
 	}
+//	if (Utl->GetPrintGraph()) gPulse = new TGraph(iEL);
+	gPulse = new TGraph(iEL);
+//	LoadParam();
 }
 
-void EventReco::LoadGraph()
+EventReco::~EventReco()
 {
-	gPulse = new TGraph(el);
-	for (int i = 0; i < el; i++)
-		gPulse->SetPoint(i, bw*(i-np), Pulse[i]);
+	delete Pulse;
+//	if (Utl->GetPrintGraph()) delete gPulse;
+	delete gPulse;
 }
 
-void EventReco::LoadDeriv()
+TGraph *EventReco::LoadGraph()
 {
-	gDeriv = new TGraph(el);
+	for (int i = 0; i < iEL; i++)
+//		gPulse->SetPoint(i, bw*(i-NewP), Pulse[i]);
+		gPulse->SetPoint(i, fBW*(i-NewP-GettPeak())+GettCFD(), Pulse[i]);
+	return gPulse;
+}
+
+TGraph *EventReco::LoadDeriv()
+{
+	gDeriv = new TGraph(iEL);
 	gDeriv->SetPoint(0, *(gPulse->GetX()), *(gPulse->GetY()));
-	for (int i = 1; i < el; i++)
-		gDeriv->SetPoint(i, bw*(i-np), Pulse[i]-Pulse[i-1]);
+	for (int i = 1; i < iEL; i++)
+		gDeriv->SetPoint(i, fBW*(i-NewP), Pulse[i]-Pulse[i-1]);
+	return gDeriv;
 }
 
+/*
 void EventReco::FillN(TNtuple *nT)
 {
 	nPulse = nT;
-	nPulse->Fill(GetBL(), GetPK(), bw*(GettVL()-np), GetCH(), GetEN(), GetCFD(), GetZC(), GetTOF());	
+	nPulse->Fill(GetBL(), GetPK(), bw*(GettVL()-NewP), GetCH(), GetEN(), GetCFD(), GetZC(), GetTOF());	
 }
+*/
 
-void EventReco::LoadN()
-{			//ordering is vital!
-	SetBL();
-	SetPK();
-	SetVL();
-	SetCFD();
-	SetZC();
-	SetCH();
-	SetEN();
+void EventReco::LoadParam()
+{			//order is vital!
+	SetBaseLine();
+	SetPeak();
+	SetValley();
+	SettCFD();
+	SetZeroC();
+	SetCharge();
+	SetEnergy();
 	SetTOF();
+
+	if (Utl->GetVerbosity() > 4) Print();
+//	Print();
 }
 
 void EventReco::Print()
 {
-	std::cout << "Trigger\t" << GetTRG();
-	std::cout << "\tID\t" << GetID();
-	std::cout << "\tEvent\t" << GetEVT() << std::endl;
-	std::cout << "Baseline \t" << GetBL() << std::endl;
-	std::cout << "Peak     \t" << GetPK() << std::endl;
-	std::cout << "Peak time\t" << bw*GettPK() << std::endl;
-	std::cout << "Valley   \t" << GetVL() << std::endl;
-	std::cout << "Valley t \t" << bw*GettVL() << std::endl;
-	std::cout << "tCFD     \t" << GetCFD() << std::endl;
-	std::cout << "Zero Cr  \t" << GetZC() << std::endl;
+	std::cout << "Baseline \t" << GetBaseLine() << std::endl;
+	std::cout << "Peak     \t" << GetPeak() << std::endl;
+	std::cout << "Peak time\t" << fBW*GettPeak() << std::endl;
+	std::cout << "Valley   \t" << GetValley() << std::endl;
+	std::cout << "Valley t \t" << fBW*GettValley() << std::endl;
+	std::cout << "tCFD     \t" << GettCFD() << std::endl;
+	std::cout << "Zero Cr  \t" << GetZeroC() << std::endl;
 	std::cout << "Time O F \t" << GetTOF() << std::endl;
-	std::cout << "Charge   \t" << GetCH() << std::endl;
-	std::cout << "Energy   \t" << GetEN() << std::endl;
+	std::cout << "Charge   \t" << GetCharge() << std::endl;
+	std::cout << "Energy   \t" << GetEnergy() << std::endl;
 }
 
-TGraph *EventReco::GetGraph()
-{
-	return gPulse;
-}
-
-TGraph *EventReco::GetDeriv()
-{
-	LoadDeriv();
-	return gDeriv;
-}
-
-void EventReco::SetBL()		//Set to zero the avg of the first 20 points
+void EventReco::SetBaseLine()		//Set to zero the avg of the first 20 points
 {
 	double x, y, sum = 0;
 	for (int i = 0; i < 20; i++)
 		sum += Pulse[i];
 
-	Baseline = sum/20.0;
+	fBaseLine = sum/20.0;
 
-	for (int i = 0; i < el; i++)
-	{
-		gPulse->GetPoint(i, x, y);
-		gPulse->SetPoint(i, x, y-Baseline);
-		Pulse[i] -= Baseline;
-	}
+	for (int i = 0; i < iEL; i++)
+		Pulse[i] -= GetBaseLine();
 }
 
-void EventReco::SetPK()
+void EventReco::SetPeak()
 {
 /*	double max = Pulse[0];
 	int p = 0;
@@ -114,14 +117,15 @@ void EventReco::SetPK()
 	}
 	Peak = max;
 	tPeak = p;	*/
-	Peak = Pulse[np];
+	fPeak = Pulse[NewP];
+//	fPeak = Utl->LocMaximum(Pulse, NewP, itPeak);
 }
 
-void EventReco::SetVL()
+void EventReco::SetValley()
 {
-	double min = Pulse[0];
-	int p = 0;
-	for (int i = 0; i < el; i++)
+	double min = Pulse[NewP];
+	int p = NewP;
+	for (int i = NewP; i < iEL; i++)
 	{
 		if (Pulse[i] < min)
 		{
@@ -129,69 +133,67 @@ void EventReco::SetVL()
 			p = i;
 		}
 	}
-	Valley = min;
-	tValley = p;
+	fValley = min;
+	iValley = p;
 }
 
-void EventReco::SetCH()
+void EventReco::SetCharge()
+{
+	fCharge = Utl->Integrate(Pulse, NewP, fBW);
+}
+
+void EventReco::SetEnergy()
 {
 	double x, y, sum = 0;
-	for (int i = np-2; i < np+3; i++)
-		sum += Pulse[i];
-	Charge = sum*bw;
+	for (int i = int(GettCFD()/fBW)-1; i < int((GettCFD()+GetZeroC())/fBW)+1; i++)
+		sum += Pulse[i-GettPeak()+NewP];
+	fEnergy = sum*fBW;
 }
 
-void EventReco::SetEN()
-{
-	double x, y, sum = 0;
-	for (int i = int(tCFD/bw)-1; i < int((tCFD+ZeroC)/bw)+1; i++)
-		sum += Pulse[i-tPeak+np];
-	Energy = sum*bw;
-}
-
-void EventReco::SetCFD()
+void EventReco::SettCFD()
 {
 	double thr = 0.25;
-	int x1, x2 = tPeak - el*pc*0.01;	//Define this better
-	double diff = fabs((1-thr)*Peak);
+	int x1;		//Run in Pulse
 
-	for (x1 = np; x1 > 0; x1--)
-		if (diff < fabs(Peak-Pulse[x1])) break;
+	double diff = fabs((1-thr)*GetPeak());
 
-	tCFD = CI(Pulse, ++x1, Peak*thr, 1);
-	tCFD += tPeak - np;
-	tCFD *= bw;
+	for (x1 = NewP; x1 > 0; x1--)
+		if (diff < fabs(GetPeak()-Pulse[x1])) break;
+
+	ftCFD = Utl->CI(Pulse, ++x1, GetPeak()*thr, 1);
+	ftCFD += GettPeak() - NewP;
+	ftCFD *= fBW;
 
 	double x, y;
 	for (int i = 0; i < gPulse->GetN(); i++)
 	{
 		gPulse->GetPoint(i, x, y);
-		gPulse->SetPoint(i, x+bw*tPeak-tCFD, y);
+		gPulse->SetPoint(i, x+fBW*GettPeak()-GettCFD(), y);
 	}
 }
 
-void EventReco::SetZC()
+void EventReco::SetZeroC()
 {
 	double thr = 0.05;
-	int x1, x2 = tPeak + el*(1-pc)*0.01;	//Define this better
-	if (x2 > el-1) x2 = el-1;
+	int x1;		//Run in pulse
 
-	double diff = fabs((1-thr)*Peak);
+	double diff = fabs((1-thr)*GetPeak());
 
-	for (x1 = tValley; x1 > np; x1--)
-		if (diff > fabs(Peak-Pulse[x1])) break;
+	for (x1 = GettValley(); x1 > NewP; x1--)
+		if (diff > fabs(GetPeak()-Pulse[x1])) break;
 
-	ZeroC = CI(Pulse, ++x1, Peak*thr, 1);
-	ZeroC += tPeak - np;
-	ZeroC *= bw;
-	ZeroC -= tCFD;
+	fZeroC = Utl->CI(Pulse, ++x1, GetPeak()*thr, 1);
+	fZeroC += GettPeak() - NewP;
+	fZeroC *= fBW;
+	fZeroC -= GettCFD();
 }
 
 void EventReco::SetTOF()
 {
-	TOF = tCFD - bw*RWM;
+	fTOF = GettCFD() - fBW*iRWM;
 }
 
+/*
 void EventReco::SetBW(double binw)
 {
 	bw = binw*sample;
@@ -216,150 +218,63 @@ void EventReco::SetPC(double perc)
 {
 	pc = perc;
 }
-
-double EventReco::GetBL()
+*/
+double EventReco::GetBaseLine()
 {
-	return Baseline;
+	return fBaseLine;
 }
 
-double EventReco::GetPK()
+double EventReco::GetPeak()
 {
-	return Peak;
+	return fPeak;
 }
 
-double EventReco::GettPK()
+int EventReco::GettPeak()
 {
-	return tPeak;
+	return iPeak;
 }
 
-double EventReco::GetVL()
+double EventReco::GetValley()
 {
-	return Valley;
+	return fValley;
 }
 
-double EventReco::GettVL()
+int EventReco::GettValley()
 {
-	return tValley;
+	return iValley;
 }
 
-double EventReco::GetCH()
+double EventReco::GettP2V()
 {
-	return Charge;
+	return fBW*(GettValley()-NewP);
 }
 
-double EventReco::GetEN()
+double EventReco::GetCharge()
 {
-	return Energy;
+	return fCharge;
 }
 
-double EventReco::GetCFD()
+double EventReco::GetEnergy()
 {
-	return tCFD;
+	return fEnergy;
 }
 
-double EventReco::GetZC()
+double EventReco::GettCFD()
 {
-	return ZeroC;
+	return ftCFD;
+}
+
+double EventReco::GetZeroC()
+{
+	return fZeroC;
 }
 
 double EventReco::GetTOF()
 {
-	return TOF;
+	return fTOF;
 }
 
-int EventReco::GetTRG()
+int EventReco::GetEntry()
 {
-	return TRG;
+	return iEnt;
 }
-
-int EventReco::GetID()
-{
-	return ID;
-}
-
-int EventReco::GetEVT()
-{
-	return EVT;
-}
-
-double EventReco::GetBW()
-{
-	return bw;
-}
-
-int EventReco::GetEL()
-{
-	return el;
-}
-
-int EventReco::GetWL()
-{
-	return wl;
-}
-
-int EventReco::GetSample()
-{
-	return wl;
-}
-
-double EventReco::GetPC()
-{
-	return pc;
-}
-
-double EventReco::CI(double *data, int x2, double fmax, double tau)
-{
-	x2 -= 1;
-	double xi = (fmax - data[x2])/(data[x2+1] - data[x2]);
-	double a3 = 0.5*data[x2] - (1./6.)*data[x2-1] + (1./6.)*data[x2+2] - 0.5*data[x2+1];
-	double a2 = (-data[x2] + 0.5*data[x2+1] + 0.5*data[x2-1]);
-	double a1 = (-0.5*data[x2] - (1./6.)*data[x2+2] + data[x2+1] - 1./3.*data[x2-1]);
-	double a0 = data[x2];
-
-	for (int rec = 0; rec < 5; rec++)
-		 xi += (fmax - a0 - a1*xi - a2*xi*xi - a3*xi*xi*xi)/(a1 + 2*a2*xi + 3*a3*xi*xi);
-
-	return tau*(x2+xi);		//change to bw?
-}
-
-void PulseFinder::SetConfig(std::string cfn)
-{
-	ConfigFile = cfn;
-	std::ifstream fin(cfn.c_str());
-	std::string Line, var;
-	double val;
-	std::stringstream ssL;
-	while (getline(fin, Line))
-	{
-		if (Line[0] == '#') continue;
-		else
-		{
-			ssL.str("");
-			ssL.clear();
-			ssL << Line;
-			ssL >> var >> val;
-			if (var == "debug") SetDebug(val);
-			if (var == "graph") SetGraph(val);
-			if (var == "concurr") SetConcurr(val);
-			if (var == "verb") SetVerbosity(val);
-			if (var == "thr_pek") SetThrPeak(val); 
-			if (var == "r_hys") SetThrHyst(val); 
-			if (var == "thr_evt") SetThrEvent(val);
-			if (var == "thr_sig") SetThrSignal(val);
-			if (var == "shape") SetShapingTime(val);
-			if (var == "sample") SetSample(val);
-			if (var == "binwid") SetBW(val);
-			if (var == "winlength") SetWinLen(val);
-		}
-	}
-	std::cout << "Verbosity is " << verb << std::endl;
-	if (graph)
-		std::cout << "Individual pulse analysis will be made" << std::endl;
-	if (debug)
-		std::cout << "Debugging mode on\nWARNING: plots will be overwritten" << std::endl;
-	else std::cout << "Debugging mode off\nNew plots will be created" << std::endl;
-	fin.close();
-	std::cout << "bw " << bw << std::endl;
-	std::cout << "wl " << wl << std::endl;
-}
-

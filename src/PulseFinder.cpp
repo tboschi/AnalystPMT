@@ -1,341 +1,360 @@
 #include "PulseFinder.h"
 
 
-PulseFinder::PulseFinder(std::string dir) :
-	verb (1),
-	thr_pek (0.02),
-	thr_evt (10),
-	thr_sig (4),
-	shape (10),
-	bw (0.002),
-	wl (40000),
-	sample (1)
+PulseFinder::PulseFinder()
 {
+	Utl = Utl->GetUtils();
+	std::cout << "From PF " << Utl << std::endl;
+
+	iVerb = Utl->GetVerbosity();
+	fBW = Utl->GetBinWidth();
+		
+	PMT = Utl->GetPMT();
+
+	LoopTrg();
+/*
 	Dir = dir;
-	if (verb > 3) std::cout << "Dir " << Dir << std::endl;
+	if (iVerb > 3) std::cout << "Dir " << Dir << std::endl;
 	std::size_t fnd = Dir.find('/');
 	if (Dir.at(Dir.length()-1) == '/')
 		Dir.erase(Dir.end()-1, Dir.end());
-	if (verb > 3) std::cout << "Dir " << Dir << std::endl;
+	if (iVerb > 3) std::cout << "Dir " << Dir << std::endl;
+*/
 }
 
 PulseFinder::~PulseFinder()
 {
-	CleanHist();
-	Close();
+	CleanAll();
+	Utl->Close();
 //	delete PMT;
 }
 
+//Loop over the triggers, divide them by the number of samples
 void PulseFinder::LoopTrg()
 {
-	newF->cd();
+	Utl->OutFile->cd();
 
+	//Counters
 	mc = 0;
+	cM = 0;
+	cI = 0;
+	cO = 0;
 
-	std::string hname;
 	PMT->GetEntry(PMT->fChain->GetEntriesFast()-1);
-	ntrg = int(PMT->Trigger/sample);
-	std::cout << "Number of entries: " << ntrg << std::endl;
+	Utl->SetNumTrg(int(PMT->Trigger/Utl->GetSample()));
+	std::cout << "Number of entries: " << PMT->fChain->GetEntriesFast() << std::endl;
+	std::cout << "Number of triggers: " << Utl->GetNumTrg() << std::endl;
 
-	std::cout << "div " << 0.000001*ntrg*bw*wl*sample;
+	//Creates histograms
+	NewHist();
 
-	mDR.clear();
-	vER.clear();
-
-	hDouble = new TH1F("hdouble", "double", int(0.1*wl), 0, wl*bw);
-	
-	hPulse = new TH1F("hpulse", "pulse", int(0.1*wl), 0, wl*bw);
-	hCharg = new TH1F("hcharg", "charge", int(0.1*wl), 0, wl*bw);
-	hRWMon = new TH1F("hrwmon", "RWM", int(wl), 0, wl*bw);
-	hPtot = new TH1F("hptot", "events time", int(0.1*wl), 0, wl*bw);
-	hCtot = new TH1F("hctot", "events charge", int(0.1*wl), 0, wl*bw);
-	hEvent = new TH1I("hevent", "events freq", int(0.1*wl), 0, wl*bw);
-	hEner = new TH2F("hener", "energy", 8, -0.5, 7.5, 8, -0.5, 7.5);
-	hTime = new TH2F("htime", "time", 8, -0.5, 7.5, 8, -0.5, 7.5);
-	hSNtot = new TH1F("hsntot", "signal and noise", 5000, 0, 10);
-	hSignl = new TH1F("hsignl", "signal", 5000, 0, 10);
-	hNoise = new TH1F("hnoise", "dark noise", 5000, 0, 10);
-//	hPeak = new TH1F("hpeak", "", 5000, 0, 10);
-	hDark = new TH2F("hdark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
-
-	nEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
-
-	for (unsigned int i = 0; i < ntrg; i++)
+	int Trg0;
+	int TrgLabel;
+	for (unsigned int i = 0; i < Utl->GetNumTrg(); i++)
 	{
-		for (int k = 0; k < sample; k++)	//loop on spills
+		for (int k = 0; k < Utl->GetSample(); k++)	//loop on spills
 		{
-			PMT->GetEntry(256*i+k);
-			if (verb)
-				std::cout << "Trigger " << PMT->Trigger << std::endl;
-			LoopPMT(i, k);
-			FindEvents(i, k);
+			CleanER();
+
+			//Change entry
+			Trg0 = 256*i+k;
+			PMT->GetEntry(Trg0);
+			TrgLabel = PMT->Trigger;
+
+			if (iVerb)
+				std::cout << "Trigger " << TrgLabel << std::endl;
+
+			//Loop over all PMT IDs, take care of clearing mPulse
+			LoopPMT(Trg0);
+			FindEvents(TrgLabel);
+			if (iVerb)
+				std::cout << "Event size " << vEvt.size() << std::endl;
+//			for (int j = (vEvt.size() > 0 ? 0 : -1); j < int(vEvt.size()); j++)
+			if (vEvt.size() == 0)
+			{
+				if (iVerb)
+					std::cout << "Event -1" << std::endl;
+
+				LoopEvents(Trg0, -1);
+				ResetHist();
+			}
 			for (int j = 0; j < vEvt.size(); j++)
 			{
-				if (verb)
+				if (iVerb)
 					std::cout << "Event " << j << std::endl;
 	
-				CatchEvents(i, k, j);
-				FillEvents(i, k, j);
-				FillHist(i, k, j);
-				SNcount(i, k, j);
-				PMT->GetEntry(256*i+k);
-				Save2DHist(PMT->Trigger, j);
-				Print2DStats(PMT->Trigger, j);
+				LoopEvents(Trg0, j);
+				Save_2DHist(TrgLabel, j);
+//				Stat_2DHist(PMT->Trigger, j);
 				ResetHist();
+      			}
       		}
-			if (vEvt.size() == 0)
-      		{
-				SNcount(i, k);
-				ResetHist();
-      		}
-      	}
-      }
-	SaveDRHist();
-	Save1DHist();
-	if (graph) SaveGraph();
-	Print1DStats();
+	}
+	Save_Hist();
+//	Stat_Hist();
 
-	fout << "Multipurpose counter: " << mc << std::endl;
+//	fout << "Multipurpose counter: " << mc << std::endl;
 }
 
-void PulseFinder::LoopPMT(int trg, int spl)
+//Loop over all PMT IDs, take care of clearing mPulse
+void PulseFinder::LoopPMT(int trg)
 {
-	vI.clear();
-	vT.clear();
-//	vH.clear();
-	vBin.clear();
-	vPos.clear();
-	vID.clear();
-	vEntry.clear();
 	RWM = 0;
 
-	for (int j = 0; j < 256; j += sample)
+	PMT->GetEntry(249+256*(trg/256));	//Catch the RWM
+	for (; RWM < Utl->GetBuffer(); RWM++)
+		if (PMT->Data[RWM] >= 0.5) break;
+	RWM %= Utl->GetBuffer();
+	if (iVerb > 2)
+		std::cout << "RWM " << RWM << std::endl;
+
+	for (int j = 0; j < 256; j += Utl->GetSample())
 	{
-		PMT->GetEntry(256*trg+j+spl);
-		if (verb > 2)
+		//Change entry
+		PMT->GetEntry(trg+j);
+		if (iVerb > 2)
 		{
-			std::cout << "Entry " << 256*trg+j+spl << "\t";
+			std::cout << "Entry " << trg+j << "\t";
 			std::cout << "PMTID " << PMT->PMTID << std::endl;
 		}
-		if (PMT->CardID < 21) FindPulses(256*trg+j+spl, spl);
-		else if (PMT->CardID == 21 && PMT->Channel == 2)
-		{
-			for (int k = 0; k < wl; k++)
-				hRWMon->SetBinContent(k, PMT->Data[k]);
-			RWM = hRWMon->FindFirstBinAbove(0.5);
-		}
+		if (PMT->CardID < 21) FindPulses(trg+j);
 	}
-
 }
 
-void PulseFinder::FindPulses(int ent, int spl)
+void PulseFinder::FindPulses(int ent)
 {
-	double peak = 0, ener = 0, y = 0, y_ = 0;
-	double thr = thr_pek;
+	double peak = 0, y = 0, y_ = 0;
+	double thr = Utl->GetThrPeak();
 	int time = 0;
-	Coord pos;
 
-	for (int k = 0; k < wl; k++)
+	for (int k = 0; k < Utl->GetBuffer(); k++)		//k is bin position
 	{
 		y = PMT->Data[k];
 		if (k == 0) y_ = y;
 		else y_ = PMT->Data[k-1];
 
 		if ((y_ > thr) && (y < thr))
-			thr = thr_pek*(1 + (r_hys > 0 ? 1.0/r_hys : 0));
+			thr = Utl->GetThrPeak()*(1 + (Utl->GetHysRatio() > 0 ? 1.0/Utl->GetHysRatio() : 0));
 
-		if ((y_ < thr) && (y > thr))	//There is a pulse!
+		if ((y_ < thr) && (y > thr))	//There is a pulse! k is peak bin position
 		{
-			thr = thr_pek*(1 - (r_hys > 0 ? 1.0/r_hys : 0));
+			thr = Utl->GetThrPeak()*(1 - (Utl->GetHysRatio() > 0 ? 1.0/Utl->GetHysRatio() : 0));
 
-			time = LocMaximum(k, peak);
-			ener = Integrate(time, bw);
-//			ener = Integrate(time, 1);
-			pos.x = PMT->PMTx;
-			pos.z = PMT->PMTz;
+			time = Utl->LocMaximum(PMT->Data, k, peak);	//Rough estimate of peak time
+//			mPulseT[PMT->PMTID].push_back(fBW*time);		//and save it to map
 
-			ER = new EventReco(ConfigFile, PMT, vEntry.at(j), vBin.at(j), RWM, trg, ID, evt);
+			//Change entry
+			ER = new EventReco(ent, time, RWM);		//Create EventReco object
+			mPulseER[PMT->PMTID].push_back(ER);
 
-			//sync push back
-			vPos.push_back(pos);		//PMT location
-			vI.push_back(ener);		//ener of pulse
-			vT.push_back(bw*time);		//real time of pulse
-//			vH.push_back(peak);		//peak height
-			vBin.push_back(time);		//bw of pulse
-			vID.push_back(PMT->PMTID);	//ID
-			vEntry.push_back(ent);		//Tree entry
-
-			if (verb > 1)
+			if (iVerb > 1)
 			{
 				std::cout << "Pulse ID " << PMT->PMTID << " @\t";
-		       		std::cout << k << "\t-> " << time << std::endl;
+		       		std::cout << k << " " << time << "\t-> " << time*fBW << std::endl;
 			}
-			if (verb > 2)			
+			if (iVerb > 2)			
 			{
 				std::cout << "y_   " << y_ << "\t";
 				std::cout << "y    " << y << "\t";
-				std::cout << "ener " << ener << "\t";
 				std::cout << "time " << time << "\t";
 				std::cout << "peak " << peak << "\t";
-				std::cout << "ID   " << PMT->PMTID << "\t";
-				std::cout << "posx " << pos.x << "\t";
-				std::cout << "posz " << pos.z << "\n";
+				std::cout << "ID   " << PMT->PMTID << "\n";
 			}
 
 //			hPulse->Fill(bw*time);	//Fill hist with times
-			hCharg->Fill(bw*time, ener);	//Fill hist with times
+//			hCharg->Fill(bw*time, ener);
 
-			hDouble->Fill(bw*time);
-			if (hDouble->GetBinContent(time/10.0) > 0) mc++;
+			hPtrig->Fill(time*fBW);
+			hPfile->Fill(time*fBW);
 
 			if (time >= k)
-				k = time + 100/sample;		//FFW must be validated
+				k = time + Utl->GetShapingTime();	//FFW must be validated
 		}
 	}
-	hPulse->Add(hDouble);
-	hDouble->Reset();
+
+//	hPfile->Add(hPulse);
+
+//	hPulse->Reset();
 }
 
-void PulseFinder::FindEvents(int trg, int spl)
+void PulseFinder::FindEvents(int trg)
 {
-	if (verb)
+	if (iVerb)
 		std::cout << "Looking for events in trigger " << trg << "...\n";
-	double b, b_, thr = thr_evt;
+	int b, b_, tBIN = 0, bc = 0;
+	double thr = Utl->GetThrEvent();
+	double tAVG = 0, tPOS = 0;
 	vEvt.clear();
-	for (int i = 0; i < 0.1*wl; i++)
+
+	for (int i = 0; i < 0.01*Utl->GetBuffer(); i++)
 	{
-		b = hPulse->GetBinContent(i);
+		b = hPtrig->GetBinContent(i);		//current bin
 		if (i == 0) b_ = b;
-		else b_ = hPulse->GetBinContent(i-1);
+		else b_ = hPtrig->GetBinContent(i-1);	//previous bin
 
-		if ((b_ > thr) && (b < thr))
-			thr = thr_evt*(1 + (r_hys > 0 ? 1.0/r_hys : 0));
-
-		if ((b_ < thr) && (b > thr))
+	if ((b_ > thr) && (b < thr))
 		{
-			thr = thr_evt*(1 - (r_hys > 0 ? 1.0/r_hys : 0));
-
-			vEvt.push_back(bw*(10*i-5));
-//			hPtot->Fill(bw*i*10);
-			hPtot->Add(hPulse);
-			hCtot->Add(hCharg);
-			if (verb)
+			thr = Utl->GetThrEvent();
+			vEvt.push_back(tAVG/tBIN);
+			hEvent->Fill(tAVG/tPOS);
+			hBinWd->Fill(bc*hPtrig->GetXaxis()->GetBinWidth(i));
+			if (iVerb > 3)
 			{
-				std::cout << "Bin " << b << "\t";
-				std::cout << "@ " << 10*i - 5 << std::endl;
+				std::cout << "yBin " << i << " w/ ";
+				std::cout << tAVG/tPOS << "\t@ ";
+				std::cout << vEvt.at(vEvt.size()-1) << std::endl;
+				std::cout << "bc " << bc*hPtrig->GetXaxis()->GetBinWidth(i) << std::endl;
 			}
+
+//			if (b > Utl->GetThrEvent()/2.0)
+			tAVG = 0;
+			tPOS = 0;
+			tBIN = 0;
+			bc = 0;
 		}
-		if (b > thr_evt/3.0)
-			hEvent->Fill(b);
+
+		if (b > thr)
+		{
+			thr = 0.5;	//0 or 1? To be defined better
+			tAVG += b*hPtrig->GetXaxis()->GetBinCenter(i);
+			tPOS += hPtrig->GetXaxis()->GetBinCenter(i);
+			tBIN += b;
+			if (iVerb > 3)
+			{
+				std::cout << "nBin " << i << " w/ ";
+				std::cout << b << "\t@ ";
+				std::cout << hPtrig->GetXaxis()->GetBinCenter(i) << std::endl;
+			}	
+			bc++;
+		}
 	}
+
+	hEntry->Fill(hPtrig->GetEntries());
 }
 
-void PulseFinder::CatchEvents(int trg, int spl, int evt)	//And Event Reco
+//Fill events and selec signal from noise
+void PulseFinder::LoopEvents(int trg, int evt)
 {
-	if (verb)
-		std::cout << "Comparing pulses and events...\n";
-	if (verb > 1) std::cout << "Event size " << vEvt.size() << std::endl;
-	if (verb > 1) std::cout << "Pulse size " << vID.size() << std::endl;
+	if (iVerb)
+		std::cout << "Looping over the events... " << evt << std::endl;
 
-	mI.clear();
-	mT.clear();
-	mPos.clear();
+	vE.clear();
+	vT.clear();
+	vP.clear();
+	vW.clear();
 
-	int ID, ers;
-	for (int j = 0; j < vID.size(); j++)
+	Analysis Par;
+	int GC = 0;
+	int PG = Utl->GetPrintGraph();
+	int ID;
+	bool IDfit;
+
+	if (iVerb > 2)
+		std::cout << "map size " << mPulseER.size() << std::endl;
+
+	for (int j = 0; j < 256; j += Utl->GetSample())
 	{
-		ID = vID.at(j);
-		if (verb > 2)
+		PMT->GetEntry(trg+j);
+		if (PMT->CardID > 20) continue;
+		ID = PMT->PMTID;
+
+//	for (int ID = 1; ID < 61; ID++)	//Loop ID and pulses
+//	{
+
+		mLength[ID] += fBW*Utl->GetBuffer();
+
+		double SumE = 0, SumW = 0, SumXY = 0, SumP = 0, SumT = 0, peak;
+		IDfit = false;
+
+		std::vector<EventReco*>::iterator iE = mPulseER[ID].begin();	//Loop over pulseER
+		for ( ; iE != mPulseER[ID].end(); ++iE, ++GC)	//Loop on pulses
 		{
-			std::cout << "vT " << vT.at(j) << "\t";
-			std::cout << "vEvt " << vEvt.at(evt) << "\t";
-			std::cout << "thr " << 10*bw*thr_sig << std::endl;
-		}
-		if (fabs(vT.at(j) - vEvt.at(evt)) <= 10*bw*thr_sig)
-		{
-			if (graph)
+			ER = *(iE);		//Get pointer from EventReco
+
+			if (evt == -1)		//No event, just noise
+				mDR[ID]++;
+
+			//Pulses close to event are signals
+			else if (fabs(ER->GettPeak()*fBW - vEvt.at(evt)) <= Utl->GetThrSignal())
 			{
-//				std::cout << "t " << vT.at(j) << "\tb " << vBin.at(j) << std::endl;
-				ers = vER.size();
-				vER.push_back(new EventReco(ConfigFile, PMT, vEntry.at(j), vBin.at(j), RWM, trg, ID, evt));
-				vER.at(ers)->LoadGraph();
-				vER.at(ers)->LoadN();
-				if (verb > 2)
-					vER.at(ers)->Print();
-				vER.at(ers)->FillN(nEvent);
-				if (vER.at(ers)->GetEN() > mI[ID])
-				{
-					mI[ID] = vER.at(ers)->GetEN();
-					mT[ID] = vER.at(ers)->GetCFD();
-					mPos[ID].x = vPos.at(j).x;
-					mPos[ID].z = vPos.at(j).z;
-				}
+
+				IDfit = true;
+				mLength[ID] -= Utl->GetThrSignal();	//Reduce time window
+
+				ER->LoadParam();
+				SumE += ER->GetEnergy();	//Sum of energies
+				SumW += ER->GetZeroC();		//Sum of widths
+				SumXY += ER->GettCFD()*ER->GetPeak();
+				SumT += ER->GettCFD();
+				SumP += ER->GetPeak();
+
+				Fill1DHist(ER);		//Histograms ready to be saved
+
+				gPulse = ER->LoadGraph();
+
+				//Average graph computed
+				GraphAVG(gMean, cM);
+				if (fabs(ER->GetTOF()) <= 1)
+					GraphAVG(giTOF, cI);
+				else GraphAVG(goTOF, cO);
+
+				if (PG > 0 ? (GC % PG == 1) : 0)	//Prints a graph if wanted
+					Save_GRHist(PMT->Trigger, ID, evt);
 			}
 			else
-				if (vI.at(j) > mI[ID])
-				{
-	
-					mI[ID] = vI.at(j);
-					mT[ID] = vT.at(j);
-					mPos[ID].x = vPos.at(j).x;
-					mPos[ID].z = vPos.at(j).z;
-				}
-			if (verb > 2)
 			{
-				std::cout << "Evt  " << vEvt.at(evt) << "\t";
-				std::cout << "ID   " << ID << "\t";
-				std::cout << "ener " << mI[ID] << "\t";
-				std::cout << "time " << mT[ID] << "\t";
-				std::cout << "x    " << mPos[ID].x << "\t";
-				std::cout << "z    " << mPos[ID].z << std::endl;
+				IDfit = false;
+				mDR[ID]++;
 			}
-
 		}
-	}
-}
 
-void PulseFinder::FillEvents(int trg, int spl, int evt)
-{
-	if (verb)
-		std::cout << "Filling the PMTs..." << std::endl;
-
-	int ID, px, pz, time;
-	double peak;
-
-	int k = vEvt.at(evt)/bw;
-
-	for (int j = 0; j < 256; j += sample)
-	{
-		PMT->GetEntry(256*trg+j+spl);
-		ID = PMT->PMTID;
-		if (PMT->CardID > 20) continue;
-
-		if (mPos.find(ID) == mPos.end())
+		if (evt != -1)
 		{
-			time = LocMaximum(k, peak);
-			mT[ID] = bw*time;
-			mI[ID] = Integrate(time, graph ? bw*100/sample : bw);
-			mPos[ID].x = PMT->PMTx;
-			mPos[ID].z = PMT->PMTz;
-			if (verb > 2)
+
+			if (!IDfit)
 			{
-				std::cout << "Evt  " << vEvt.at(evt) << "\t";
-				std::cout << "ID   " << ID << "\t";
-				std::cout << "ener " << mI[ID] << "\t";
-				std::cout << "time " << mT[ID] << "\t";
-				std::cout << "x    " << mPos[ID].x << "\t";
-				std::cout << "z    " << mPos[ID].z << std::endl;
+				int k = vEvt.at(evt)/fBW;	//Bin position of the event
+
+				Par.T = Utl->LocMaximum(PMT->Data, k, peak);
+				Par.E = Utl->Integrate(PMT->Data, int(Par.T), fBW);
+				Par.T *= fBW;
+				Par.P = peak;
+				Par.W = 0;
+			}
+			else
+			{
+				Par.E = SumE;
+				Par.T = SumXY/SumP;
+				Par.P = SumXY/SumT;
+				Par.W = SumW;
+			}
+
+			vE.push_back(Par.E);
+			vT.push_back(Par.T);
+			vP.push_back(Par.P);
+			vW.push_back(Par.W);
+			Fill2DHist(ID, Par);		//Histograms ready to be saved
+	
+			if (iVerb > 2)
+			{
+				Coord Pos = Utl->Mapper(ID);
+				std::cout << "ID " << ID << " f " << IDfit << std::endl;
+				std::cout << "ener " << Par.E << "\t";
+				std::cout << "time " << Par.T << "\t";
+				std::cout << "peak " << Par.P << "\t";
+				std::cout << "widt " << Par.W << "\t";
+				std::cout << "x" << Pos.x << "z" << Pos.z << std::endl;
 			}
 		}
-//		else std::cout << "ID   " << ID << std::endl;
 	}
 }
 
-void PulseFinder::FillHist(int trg, int spl, int evt)
+//void PulseFinder::FillHist(int trg, int spl, int evt)
+void PulseFinder::Fill1DHist(EventReco *ER)
 {
-	if (verb)
-		std::cout << "Filling hitograms...\n";
-
+	if (iVerb)
+		std::cout << "Filling histograms...\n";
+/*
 	int ID, px, pz;
 	std::map<int, Coord>::const_iterator imP;
 	for (imP = mPos.begin(); imP != mPos.end(); imP++)
@@ -346,7 +365,7 @@ void PulseFinder::FillHist(int trg, int spl, int evt)
 		hEner->SetBinContent(imP->second.x+1, imP->second.z+1, mI[ID]);
 		hTime->SetBinContent(imP->second.x+1, imP->second.z+1, mT[ID]);
 //		hTime->SetBinContent(px+1, pz+1, mT[ID]);
-		if (verb > 2)
+		if (iVerb > 2)
 		{
 			std::cout << "ID   " << ID << "\t";
 			std::cout << "ener " << mI[ID] << "\t";
@@ -354,31 +373,317 @@ void PulseFinder::FillHist(int trg, int spl, int evt)
 			std::cout << "x    " << px << "\t";
 			std::cout << "z    " << pz << std::endl;
 		}
-	}
+	
+*/	
+
+	hBaseLine->Fill(ER->GetBaseLine());
+	hPeak->Fill(ER->GetPeak());
+	hValley->Fill(ER->GettP2V());
+	hTime->Fill(ER->GettCFD());
+	hWidth->Fill(ER->GetZeroC());
+	hCharge->Fill(ER->GetCharge());
+	hEnergy->Fill(ER->GetEnergy());
+	hTOF->Fill(ER->GetTOF());
 }		
 
-void PulseFinder::SNcount(int trg, int spl, int evt)
+void PulseFinder::Fill2DHist(int ID, Analysis Par)
+{
+	Coord Pos = Utl->Mapper(ID);
+
+	h2Ener->SetBinContent(Pos.x+1, Pos.z+1, Par.E);
+	h2Time->SetBinContent(Pos.x+1, Pos.z+1, Par.T);
+	h2Peak->SetBinContent(Pos.x+1, Pos.z+1, Par.P);
+//	h2Widt->SetBinContent(Pos.x+1, Pos.z+1, Par.W);
+}
+
+//Histograms
+void PulseFinder::NewHist()
+{
+	double xrange = Utl->GetBuffer()*fBW;
+	int nbins = int(0.1*Utl->GetBuffer());
+	hPulse = new TH1F("hpulse", "pulses", nbins, 0, xrange);
+	hPtrig = new TH1F("hptrig", "pulses in trigger", nbins/10, 0, xrange);
+	hPfile = new TH1F("hpfile", "pulses in file", nbins, 0, xrange);	
+	hEvent = new TH1F("hevent", "events freq", nbins/20, 0, xrange);
+	hEntry = new TH1F("hentry", "entries freq", nbins/20, 0, xrange);
+	hBinWd = new TH1F("hbinwd", "event width", 40, 0, 8);
+
+//	nEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
+
+	hBaseLine = new TH1F("hbaseline", "Baseline", 250, -0.005, 0.005);
+	hPeak = new TH1F("hpeak", "Peak", 250, 0, 5);
+	hValley = new TH1F("hvalley", "Valley from peak", 250, -1, 4);
+	hTime = new TH1F("htime", "time", nbins, 0, xrange);
+	hWidth = new TH1F("hwidth", "zero cross", 250, -1, 4);
+	hCharge = new TH1F("hcharge", "charge", 250, -0.03, 0.13);
+	hEnergy = new TH1F("henergy", "energy", 250, -0.05, 0.25);
+	hTOF = new TH1F("htof", "time of flight", nbins, 0, xrange);
+
+	h2Ener = new TH2F("h2ener", "energy", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	h2Time = new TH2F("h2time", "time", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	h2Peak = new TH2F("h2peak", "peak", 8, -0.5, 7.5, 8, -0.5, 7.5);
+//	h2Widt = new TH2F("h2widt", "width", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	h2Dark = new TH2F("h2dark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
+
+	gMean = new TGraph(Utl->GetEvtLength());
+	giTOF = new TGraph(Utl->GetEvtLength());
+	goTOF = new TGraph(Utl->GetEvtLength());
+
+}
+
+void PulseFinder::FillDRHist()
 {
 	int ID;
-	for (int j = 0; j < vID.size(); j++)
+	Coord Pos;
+	if (iVerb > 1)
+		std::cout << "mDR size " << mDR.size() << std::endl;
+	std::map<int, double>::const_iterator imP;
+	for (imP = mDR.begin(); imP != mDR.end(); imP++)
 	{
-		ID = vID.at(j);
-		if (vEvt.size() == 0)
-		{
-			hNoise->Fill(vI.at(j));
-			mDR[ID]++;
-		}
-		else 
-		{
-			if (fabs(vT.at(j) - vEvt.at(evt)) <= 10*bw*thr_sig)
-			{
-				hSignl->Fill(vI.at(j));
-			}
-			else if (fabs(vT.at(j) - vEvt.at(evt)) > 20*bw*thr_sig)
-			{
-				hNoise->Fill(vI.at(j));
-				mDR[ID]++;
-			}
-		}
+		ID = imP->first;
+		Pos = Utl->Mapper(ID);
+		mDR[ID] /= mLength[ID];
+		mDR[ID] *= 1000000;
+		if (iVerb)
+			std::cout << ID << " Dark rate " << mDR[ID] << "Hz\n";
+		h2Dark->SetBinContent(Pos.x+1, Pos.z+1, mDR[ID]);
 	}
+}
+
+void PulseFinder::GraphAVG(TGraph *g, int &cc)
+{
+	double x, y0, y;
+	 ++cc;
+	for (int i = 0; i < gPulse->GetN(); i++)
+	{
+		gPulse->GetPoint(i, x, y0);
+		g->GetPoint(i, x, y);
+		g->SetPoint(i, fBW*i, ((cc-1)*y+y0)/cc);
+		if (y0 > 1000) std::cout << "Warning " << cc << std::endl;
+	}
+}
+
+//Utility stuff
+void PulseFinder::Save_Hist()
+{
+	FillDRHist();
+	if (iVerb)
+		std::cout << "Saving 1D histograms...\n";
+	
+	Utl->OutFile->cd();
+
+	hPfile->SetStats(kFALSE);
+	hEvent->SetStats(kTRUE);
+	hEntry->SetStats(kTRUE);
+	hBinWd->SetStats(kTRUE);
+	h2Dark->SetStats(kFALSE);
+	h2Dark->SetContour(40);
+	h2Dark->SetOption("COLZ10TEXT");
+
+	hPfile->GetXaxis()->SetTitle("time");
+	hEvent->GetXaxis()->SetTitle("pmt fired");
+	hEntry->GetXaxis()->SetTitle("entries");
+	hBinWd->GetXaxis()->SetTitle("width");
+	h2Dark->GetXaxis()->SetTitle("x");
+	h2Dark->GetYaxis()->SetTitle("z");
+	h2Dark->GetZaxis()->SetRangeUser(Utl->MinM(mDR)-1, Utl->MaxM(mDR)+1);
+	gMean->GetXaxis()->SetTitle("time");
+	giTOF->GetXaxis()->SetTitle("time");
+	goTOF->GetXaxis()->SetTitle("time");
+	gMean->GetYaxis()->SetTitle("amplitude");
+	giTOF->GetYaxis()->SetTitle("amplitude");
+	goTOF->GetYaxis()->SetTitle("amplitude");
+
+	gMean->SetTitle("Average");
+	giTOF->SetTitle("In coincidence");
+	goTOF->SetTitle("Out coincidence");
+
+	hBaseLine->Write();
+	hPeak->Write();
+	hValley->Write();
+	hTime->Write();
+	hWidth->Write();
+	hCharge->Write();
+	hEnergy->Write();
+	hTOF->Write();
+
+	hPfile->Write();
+	hEvent->Write();
+	hEntry->Write();
+	hBinWd->Write();
+	h2Dark->Write();
+	gMean->Write("gmean");
+	giTOF->Write("gitof");
+	goTOF->Write("gotof");
+}
+
+void PulseFinder::Save_2DHist(int trg, int evt)
+{
+	if (iVerb)
+		std::cout << "Saving 2D histograms...\n";
+
+	Utl->OutFile->cd("2D");
+
+	//1D plot
+	hPtrig->SetStats(kFALSE);
+	hPtrig->GetXaxis()->SetTitle("time");
+	if (evt == 0)
+	{
+		ssName.str("");
+		ssName.clear();
+		ssName << hPtrig->GetName();
+		ssName << "_" << trg;
+		hPtrig->Write(ssName.str().c_str());
+	}
+
+	//2D plots
+	h2Ener->SetContour(40);
+	h2Time->SetContour(40);
+	h2Peak->SetContour(40);
+//	h2Widt->SetContour(40);
+
+	h2Ener->SetStats(kFALSE);
+	h2Time->SetStats(kFALSE);
+	h2Peak->SetStats(kFALSE);
+//	h2Widt->SetStats(kFALSE);
+
+	h2Ener->GetXaxis()->SetTitle("x");
+	h2Ener->GetYaxis()->SetTitle("z");
+	h2Time->GetXaxis()->SetTitle("x");
+	h2Time->GetYaxis()->SetTitle("z");
+	h2Peak->GetXaxis()->SetTitle("x");
+	h2Peak->GetYaxis()->SetTitle("z");
+//	h2Widt->GetXaxis()->SetTitle("x");
+//	h2Widt->GetYaxis()->SetTitle("z");
+
+	h2Ener->SetOption("COLZ10TEXT");
+	h2Time->SetOption("COLZ10TEXT");
+	h2Peak->SetOption("COLZ10TEXT");
+//	h2Widt->SetOption("COLZ10TEXT");
+
+	ssName.str("");
+	ssName.clear();
+	ssName << h2Ener->GetName();
+	ssName << "_" << trg << "_" << evt;
+	if (iVerb > 2)
+	{
+		std::cout << "hEner " << "max " << Utl->MaxV(vE);
+		std::cout << " min " << Utl->MinV(vE) << std::endl;
+	}	
+	h2Ener->GetZaxis()->SetRangeUser(Utl->MinV(vE), Utl->MaxV(vE));
+	h2Ener->Write(ssName.str().c_str());
+
+	ssName.str("");
+	ssName.clear();
+	ssName << h2Time->GetName();
+	ssName << "_" << trg << "_" << evt;
+	if (iVerb > 2)
+	{	
+		std::cout << "hTime " << "max " << Utl->MaxV(vT);
+		std::cout << " min " << Utl->MinV(vT) << std::endl;
+	}
+	double bw = fBW;
+	h2Time->GetZaxis()->SetRangeUser(Utl->MinV(vT)-10*bw, Utl->MaxV(vT)+10*bw);
+	h2Time->Write(ssName.str().c_str());
+
+	ssName.str("");
+	ssName.clear();
+	ssName << h2Peak->GetName();
+	ssName << "_" << trg << "_" << evt;
+	if (iVerb > 2)
+	{
+		std::cout << "hPeak " << "max " << Utl->MaxV(vP);
+		std::cout << " min " << Utl->MinV(vP) << std::endl;
+	}	
+	h2Peak->GetZaxis()->SetRangeUser(Utl->MinV(vP), Utl->MaxV(vP));
+	h2Peak->Write(ssName.str().c_str());
+
+//	ssName.str("");
+//	ssName.clear();
+//	ssName << h2Widt->GetName();
+//	ssName << "_" << trg << "_" << evt;
+//	if (iVerb > 2)
+//	{
+//		std::cout << "hWidt " << "max " << Utl->MaxV(vW);
+//		std::cout << " min " << Utl->MinV(vW) << std::endl;
+//	}	
+//	h2Widt->GetZaxis()->SetRangeUser(Utl->MinV(vW), Utl->MaxV(vW));
+//	h2Widt->Write(ssName.str().c_str());
+}
+
+void PulseFinder::Save_GRHist(int trg, int ID, int evt)
+{
+	Utl->OutFile->cd("GR");
+
+	Coord Pos = Utl->Mapper(ID);
+
+	ssName.str("");
+	ssName.clear();
+	ssName << "pulse_" << trg;
+	ssName << "_x" << Pos.x;
+	ssName << "z" << Pos.z;
+	ssName << "_" << evt;
+
+	gPulse->GetXaxis()->SetTitle("time");
+	gPulse->GetYaxis()->SetTitle("Data");
+	gPulse->SetTitle("Pulse");
+
+	gPulse->Write(ssName.str().c_str());
+}
+
+void PulseFinder::ResetHist()
+{
+	hPulse->Reset();
+	hPtrig->Reset();
+	h2Ener->Reset();
+	h2Time->Reset();
+	h2Peak->Reset();
+//	h2Widt->Reset();
+}
+
+void PulseFinder::CleanER()
+{
+	std::map<int, std::vector<EventReco*> >::iterator iM = mPulseER.begin();	//Loop over pulses
+	for ( ; iM != mPulseER.end(); ++iM)
+	{
+		std::vector<EventReco*>::iterator iV = iM->second.begin();	//Loop over pulses
+		for ( ; iV != iM->second.end(); ++iV)
+			delete *(iV);
+	}
+
+	mPulseER.clear();
+//	mPulseT.clear();
+}
+
+void PulseFinder::CleanAll()
+{
+	CleanER();
+	mDR.clear();
+	mLength.clear();
+
+	hPulse->Delete();
+	hPtrig->Delete(); 
+	hPfile->Delete();
+	hEvent->Delete();
+	hEntry->Delete();
+	hBinWd->Delete();
+	         
+	hBaseLine->Delete();
+	hPeak->Delete();
+	hValley->Delete();
+	hTime->Delete();
+	hWidth->Delete();
+	hCharge->Delete();
+	hEnergy->Delete();
+	hTOF->Delete();
+         
+	h2Ener->Delete();
+	h2Time->Delete();
+	h2Peak->Delete();
+//	h2Widt->Delete();
+	h2Dark->Delete();
+
+	gMean->Delete();
+	giTOF->Delete();
+	goTOF->Delete();
 }
