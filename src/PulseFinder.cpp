@@ -191,7 +191,7 @@ void PulseFinder::FindEvents(int trg)
 		if (i == 0) b_ = b;
 		else b_ = hPtrig->GetBinContent(i-1);	//previous bin
 
-	if ((b_ > thr) && (b < thr))
+		if ((b_ > thr) && (b < thr))
 		{
 			thr = Utl->GetThrEvent();
 			vEvt.push_back(tAVG/tBIN);
@@ -293,7 +293,7 @@ void PulseFinder::LoopEvents(int trg, int evt)
 
 				//Average graph computed
 				GraphAVG(gMean, cM);
-				if (fabs(ER->GetTOF()) <= 1)
+				if (fabs(ER->GetTOF()-0.25) <= 0.75)
 					GraphAVG(giTOF, cI);
 				else GraphAVG(goTOF, cO);
 
@@ -444,8 +444,8 @@ void PulseFinder::NewHist()
 	tEvent->Branch("P2V", &fValley, "fValley/F");
 	tEvent->Branch("time", &fTime, "fTime/F");
 	tEvent->Branch("width", &fWidth, "fWidth/F");
-	tEvent->Branch("vharge", &fCharge, "fCharge/F");
-	tEvent->Branch("cnergy", &fEnergy, "fEnergy/F");
+	tEvent->Branch("charge", &fCharge, "fCharge/F");
+	tEvent->Branch("energy", &fEnergy, "fEnergy/F");
 	tEvent->Branch("TOF", &fTOF, "fTOF/F");
 }
 
