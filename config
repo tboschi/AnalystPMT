@@ -13,6 +13,8 @@
 #printgraph sets how many graph skips before saving, 0 doesn't save
 #percent is the position of the peak in the graph window, in percent
 #eventlength is the bin size of graph window
+#lowbound is the lower bound for the TOF cut
+#upbound is the upper bound for the TOF cut
 
 debug 1
 verbosity 0
@@ -24,6 +26,8 @@ shapingtime 100
 sample 4
 binwidth 0.002
 buffer 40000
-printgraph 10
+printgraph 0
 percent 20
-eventlength 500
+eventlength 125
+lowbound -1
+upboud 1

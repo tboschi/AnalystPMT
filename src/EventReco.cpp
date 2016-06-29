@@ -39,7 +39,7 @@ TGraph *EventReco::LoadGraph()
 {
 	for (int i = 0; i < iEL; i++)
 //		gPulse->SetPoint(i, bw*(i-NewP), Pulse[i]);
-		gPulse->SetPoint(i, fBW*(i-NewP-GettPeak())+GettCFD(), Pulse[i]);
+		gPulse->SetPoint(i, fBW*(i-NewP+GettPeak())-GettCFD(), Pulse[i]);
 	return gPulse;
 }
 
@@ -165,11 +165,12 @@ void EventReco::SettCFD()
 	ftCFD *= fBW;
 
 	double x, y;
+	/*
 	for (int i = 0; i < gPulse->GetN(); i++)
 	{
 		gPulse->GetPoint(i, x, y);
 		gPulse->SetPoint(i, x+fBW*GettPeak()-GettCFD(), y);
-	}
+	}*/
 }
 
 void EventReco::SetZeroC()

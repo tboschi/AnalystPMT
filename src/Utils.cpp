@@ -252,6 +252,8 @@ void Utils::SetConfig(std::string cfn)
 			if (var == "printgraph") SetPrintGraph(val);
 			if (var == "percent") SetPercent(val);
 			if (var == "eventlength") SetEvtLength(val);
+			if (var == "lowbound") SetLowB(val);
+			if (var == "upbound") SetUpB(val);
 		}
 	}
 	std::cout << "Verbosity is " << GetVerbosity() << std::endl;
@@ -330,6 +332,16 @@ void Utils::SetEvtLength(int emp)
 	iEvtLength = emp;
 }
 
+void Utils::SetLowB(double emp)
+{
+	fLowB = emp;
+}
+
+void Utils::SetUpB(double emp)
+{
+	fUpB = emp;
+}
+
 void Utils::SetNumTrg(int emp)
 {
 	iNumTrg = emp;
@@ -399,6 +411,16 @@ double Utils::GetPercent()
 int Utils::GetEvtLength()
 {
 	return iEvtLength;
+}
+
+double Utils::GetLowB()
+{
+	return fLowB;
+}
+
+double Utils::GetUpB()
+{
+	return fUpB;
 }
 
 unsigned int Utils::GetNumTrg()

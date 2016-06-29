@@ -69,14 +69,15 @@ int main(int argc, char **argv)
 
 //	TNtuple *tEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
 
-	TH1F *tBaseLine = new TH1F("tbaseline", "Baseline", 250, -0.005, 0.005);
-	TH1F *tPeak = new TH1F("tpeak", "Peak", 250, 0, 5);
-	TH1F *tValley = new TH1F("tvalley", "Valley from peak", 250, -1, 4);
-	TH1F *tTime = new TH1F("ttime", "time", nbins, 0, xrange);
-	TH1F *tWidth = new TH1F("twidth", "zero cross", 250, -1, 4);
-	TH1F *tCharge = new TH1F("tcharge", "charge", 250, -0.03, 0.13);
-	TH1F *tEnergy = new TH1F("tenergy", "energy", 250, -0.05, 0.25);
-	TH1F *tTOF = new TH1F("ttof", "time of flight", nbins, -xrange, xrange);
+	TH1F *tBaseLine = new TH1F("hbaseline", "Baseline", 250, -0.005, 0.005);
+	TH1F *tPeak = new TH1F("hpeak", "Peak", 500, 0, 5);
+	TH1F *tValley = new TH1F("hvalley", "Valley from peak", 500, 0, 1);
+	TH1F *tTime = new TH1F("htime", "Time", nbins, 0, xrange);
+	TH1F *tWidth = new TH1F("hwidth", "Pulse width", 500, -0.1, 0.9);
+	TH1F *tCharge = new TH1F("hcharge", "Charge", 500, -0.005, 0.075);
+	TH1F *tEnergy = new TH1F("henergy", "Energy", 500, -0.005, 0.095);
+	TH1F *tTOF = new TH1F("htof", "Time of flight", nbins, -xrange, xrange);
+	TH1I *tCard21 = new TH1I("hcard21", "Card 21 on event", 4, 0, 4);
 
 	TH2F *t2Dark = new TH2F("t2dark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 
@@ -119,6 +120,7 @@ int main(int argc, char **argv)
 	TH1F *hCharge;
 	TH1F *hEnergy;
 	TH1F *hTOF;
+	TH1I *hCard21;
 	TH2F *h2Dark;
 	TGraph *gMean;
 	TGraph *giTOF;
@@ -152,6 +154,7 @@ int main(int argc, char **argv)
 		hCharge = (TH1F*) Utl->InFile->Get("hcharge");
 		hEnergy = (TH1F*) Utl->InFile->Get("henergy");
 		hTOF = (TH1F*) Utl->InFile->Get("htof");
+		hCard21 = (TH1I*) Utl->InFile->Get("hcard21");
 		hPfile = (TH1F*) Utl->InFile->Get("hpfile");
 		hEvent = (TH1F*) Utl->InFile->Get("hevent");
 		hEntry = (TH1F*) Utl->InFile->Get("hentry");
@@ -190,6 +193,7 @@ int main(int argc, char **argv)
 		tCharge->Add(hCharge, 1.0/RF_In.size());
 		tEnergy->Add(hEnergy, 1.0/RF_In.size());
 		tTOF->Add(hTOF, 1.0/RF_In.size());
+		tCard21->Add(hCard21, 1.0/RF_In.size());
 		t2Dark->Add(h2Dark, 1.0/RF_In.size());
 	}
 
@@ -237,6 +241,7 @@ int main(int argc, char **argv)
 	tCharge->Write();
 	tEnergy->Write();
 	tTOF->Write();
+	tCard21->Write();
 
 	tPfile->Write();
 	tEvent->Write();

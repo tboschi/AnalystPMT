@@ -83,7 +83,7 @@ void PulseFinder::LoopTrg()
 					std::cout << "Event " << j << std::endl;
 	
 				LoopEvents(Trg0, j);
-				Save_2DHist(TrgLabel, j);
+//				Save_2DHist(TrgLabel, j);
 //				Stat_2DHist(PMT->Trigger, j);
 				ResetHist();
       			}
@@ -98,7 +98,13 @@ void PulseFinder::LoopTrg()
 //Loop over all PMT IDs, take care of clearing mPulse
 void PulseFinder::LoopPMT(int trg)
 {
+	vVETO.clear();
+	vMRD2.clear();
+	vMRD4.clear();
 	RWM = 0;
+
+	double peak, y, y_;
+	int time;
 
 	PMT->GetEntry(249+256*(trg/256));	//Catch the RWM
 	for (; RWM < Utl->GetBuffer(); RWM++)
@@ -117,6 +123,38 @@ void PulseFinder::LoopPMT(int trg)
 			std::cout << "PMTID " << PMT->PMTID << std::endl;
 		}
 		if (PMT->CardID < 21) FindPulses(trg+j);
+		else if (PMT->Channel != 2)
+		{
+			for (int k = 0; k < Utl->GetBuffer(); k++)		//k is bin position
+			{
+				time = 0;
+				peak = 0;
+
+				y = PMT->Data[k];
+				if (k == 0) y_ = y;
+				else y_ = PMT->Data[k-1];
+		
+				if ((y_ < Utl->GetThrPeak()) && (y > Utl->GetThrPeak()))	//There is a pulse!
+				{
+					time = Utl->LocMaximum(PMT->Data, k, peak);	//Rough estimate of peak time
+
+					if (PMT->Channel == 0)
+						vVETO.push_back(time*fBW);
+					if (PMT->Channel == 1)
+						vMRD2.push_back(time*fBW);
+					if (PMT->Channel == 3)
+						vMRD4.push_back(time*fBW);
+
+					if (time >= k)
+						k = time + Utl->GetShapingTime();	//FFW must be validated
+				}
+			}
+		}
+		else 
+		{
+		}
+
+
 	}
 }
 
@@ -262,7 +300,7 @@ void PulseFinder::LoopEvents(int trg, int evt)
 
 		mLength[ID] += fBW*Utl->GetBuffer();
 
-		double SumE = 0, SumW = 0, SumXY = 0, SumP = 0, SumT = 0, peak;
+//		double SumE = 0, SumW = 0, SumXY = 0, SumP = 0, SumT = 0, peak;
 		IDfit = false;
 
 		std::vector<EventReco*>::iterator iE = mPulseER[ID].begin();	//Loop over pulseER
@@ -281,11 +319,44 @@ void PulseFinder::LoopEvents(int trg, int evt)
 				mLength[ID] -= Utl->GetThrSignal();	//Reduce time window
 
 				ER->LoadParam();
-				SumE += ER->GetEnergy();	//Sum of energies
-				SumW += ER->GetZeroC();		//Sum of widths
-				SumXY += ER->GettCFD()*ER->GetPeak();
-				SumT += ER->GettCFD();
-				SumP += ER->GetPeak();
+//				SumE += ER->GetEnergy();	//Sum of energies
+//				SumW += ER->GetZeroC();		//Sum of widths
+//				SumXY += ER->GettCFD()*ER->GetPeak();
+//				SumT += ER->GettCFD();
+//				SumP += ER->GetPeak();
+
+				bVETO = 0;
+				for (int i = 0; i < vVETO.size(); i++)
+				{
+					if (fabs(ER->GettPeak()*fBW - vVETO.at(i)) <= Utl->GetThrSignal())
+					{
+						bVETO = 1;
+						break;
+					}
+					else hCard21->Fill(0);
+				}
+
+				bMRD2 = 0;
+				for (int i = 0; i < vMRD2.size(); i++)
+				{
+					if (fabs(ER->GettPeak()*fBW - vMRD2.at(i)) <= Utl->GetThrSignal())
+					{
+						bMRD2 = 1;
+						break;
+					}
+					else hCard21->Fill(1);
+				}
+
+				bMRD4 = 0;
+				for (int i = 0; i < vMRD4.size(); i++)
+				{
+					if (fabs(ER->GettPeak()*fBW - vMRD4.at(i)) <= Utl->GetThrSignal())
+					{
+						bMRD4 = 1;
+						break;
+					}
+					else hCard21->Fill(3);
+				}
 
 				Fill1DHist(ER);		//Histograms ready to be saved
 
@@ -293,7 +364,7 @@ void PulseFinder::LoopEvents(int trg, int evt)
 
 				//Average graph computed
 				GraphAVG(gMean, cM);
-				if (fabs(ER->GetTOF()-0.25) <= 0.75)
+				if (ER->GetTOF() > Utl->GetLowB() && ER->GetTOF() < Utl->GetUpB())
 					GraphAVG(giTOF, cI);
 				else GraphAVG(goTOF, cO);
 
@@ -307,44 +378,6 @@ void PulseFinder::LoopEvents(int trg, int evt)
 			}
 		}
 
-		if (evt != -1)
-		{
-
-			if (!IDfit)
-			{
-				int k = vEvt.at(evt)/fBW;	//Bin position of the event
-
-				Par.T = Utl->LocMaximum(PMT->Data, k, peak);
-				Par.E = Utl->Integrate(PMT->Data, int(Par.T), fBW);
-				Par.T *= fBW;
-				Par.P = peak;
-				Par.W = 0;
-			}
-			else
-			{
-				Par.E = SumE;
-				Par.T = SumXY/SumP;
-				Par.P = SumXY/SumT;
-				Par.W = SumW;
-			}
-
-			vE.push_back(Par.E);
-			vT.push_back(Par.T);
-			vP.push_back(Par.P);
-			vW.push_back(Par.W);
-			Fill2DHist(ID, Par);		//Histograms ready to be saved
-	
-			if (iVerb > 2)
-			{
-				Coord Pos = Utl->Mapper(ID);
-				std::cout << "ID " << ID << " f " << IDfit << std::endl;
-				std::cout << "ener " << Par.E << "\t";
-				std::cout << "time " << Par.T << "\t";
-				std::cout << "peak " << Par.P << "\t";
-				std::cout << "widt " << Par.W << "\t";
-				std::cout << "x" << Pos.x << "z" << Pos.z << std::endl;
-			}
-		}
 	}
 }
 
@@ -420,13 +453,14 @@ void PulseFinder::NewHist()
 //	nEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
 
 	hBaseLine = new TH1F("hbaseline", "Baseline", 250, -0.005, 0.005);
-	hPeak = new TH1F("hpeak", "Peak", 250, 0, 5);
-	hValley = new TH1F("hvalley", "Valley from peak", 250, -1, 4);
+	hPeak = new TH1F("hpeak", "Peak", 500, 0, 5);
+	hValley = new TH1F("hvalley", "Valley from peak", 500, 0, 1);
 	hTime = new TH1F("htime", "Time", nbins, 0, xrange);
-	hWidth = new TH1F("hwidth", "Pulse width", 250, -1, 4);
-	hCharge = new TH1F("hcharge", "Charge", 250, -0.03, 0.13);
-	hEnergy = new TH1F("henergy", "Energy", 250, -0.05, 0.25);
+	hWidth = new TH1F("hwidth", "Pulse width", 500, -0.1, 0.9);
+	hCharge = new TH1F("hcharge", "Charge", 500, -0.005, 0.075);
+	hEnergy = new TH1F("henergy", "Energy", 500, -0.005, 0.095);
 	hTOF = new TH1F("htof", "Time of flight", nbins, -xrange, xrange);
+	hCard21 = new TH1I("hcard21", "Card 21 on event", 4, 0, 4);
 
 	h2Ener = new TH2F("h2ener", "Energy", 8, -0.5, 7.5, 8, -0.5, 7.5);
 	h2Time = new TH2F("h2time", "Time", 8, -0.5, 7.5, 8, -0.5, 7.5);
@@ -447,6 +481,9 @@ void PulseFinder::NewHist()
 	tEvent->Branch("charge", &fCharge, "fCharge/F");
 	tEvent->Branch("energy", &fEnergy, "fEnergy/F");
 	tEvent->Branch("TOF", &fTOF, "fTOF/F");
+	tEvent->Branch("VETO", &bVETO, "bVETO/O");
+	tEvent->Branch("MRD2", &bMRD2, "bMRD2/O");
+	tEvent->Branch("MRD4", &bMRD4, "bMRD4/O");
 }
 
 void PulseFinder::FillDRHist()
@@ -526,6 +563,7 @@ void PulseFinder::Save_Hist()
 	hCharge->Write();
 	hEnergy->Write();
 	hTOF->Write();
+	hCard21->Write();
 
 	hPfile->Write();
 	hEvent->Write();
@@ -696,6 +734,7 @@ void PulseFinder::CleanAll()
 	hCharge->Delete();
 	hEnergy->Delete();
 	hTOF->Delete();
+	hCard21->Delete();
          
 	h2Ener->Delete();
 	h2Time->Delete();

@@ -88,6 +88,8 @@ class Utils
 		int GetPrintGraph();
 		double GetPercent();
 		int GetEvtLength();
+		double GetLowB();
+		double GetUpB();
 		unsigned int GetNumTrg();
 
 		void SetDebug(bool emp);
@@ -103,6 +105,8 @@ class Utils
 		void SetPrintGraph(int emp);
 		void SetPercent(double emp);
 		void SetEvtLength(int emp);
+		void SetLowB(double emp);
+		void SetUpB(double emp);
 		void SetNumTrg(int emp);
 
 		//Max and Min finder in vectors or maps
@@ -198,7 +202,9 @@ class Utils
 		double fPercent;	//Peak position, in percentage of Event length
 		int iBuffer;		//Event length
 		int iSample;		//Event length
-		int iEvtLength;	//Event length
+		int iEvtLength;		//Event length
+		double fLowB;		//Lower bound for TOF
+		double fUpB;		//Upper bound for TOF
 
 		unsigned int iNumTrg;	//Num of triggers in file
 	
