@@ -45,10 +45,10 @@ class PulseFinder
 		void LoopPMT(int trg);
 		void FindPulses(int ent);
 		void FindEvents(int trg);
-		void LoopEvents(int trg, int evt);
+		void LoopEvents(int trg);
 		void Fill1DHist(EventReco *ER);
 		void Fill2DHist(int ID, Analysis Par);
-		void FillDRHist();
+		void FillRateHist();
 		void GraphAVG(TGraph *g, int &cc);
 		void NewHist();
 		void Save_Hist();
@@ -66,11 +66,11 @@ class PulseFinder
 		Utils *Utl;
 		PMTData *PMT;
 
-		int iVerb;	//Verbosity level
-		double fBW;
-		int mc;		//Multipurpose counter
-		int RWM;
-		int cM, cI, cO; 
+		int iVerb;			//Verbosity level
+		double fBW;			//BinWidth
+		int RWM;			//RWM bin
+		int mc, cM, cI, cO, GC;		//Counters
+
 
 		std::stringstream ssName;	//Histogram name
 		std::fstream fout;
@@ -82,13 +82,13 @@ class PulseFinder
 		std::vector<double> vVETO, vMRD2, vMRD4;
 		std::vector<double> vEvt;
 		std::vector<double> vE, vT, vP, vW;
-		std::map<int, double> mDR;		//DR pulses count
-		std::map<int, double> mLength;		//total time for DR count
+		std::map<int, double> mDR, mER;		//DarkRate and EventRate pulses count
+		std::map<int, double> mLength;		//total time for rate count
 
 		TH1I *hCard21;
 		TH1F *hPulse, *hPtrig, *hPfile, *hEvent, *hEntry, *hBinWd;
 		TH1F *hBaseLine, *hPeak, *hValley, *hTime, *hWidth, *hCharge, *hEnergy, *hTOF;
-		TH2F *h2Ener, *h2Time, *h2Peak, *h2Widt, *h2Dark;
+		TH2F *h2Ener, *h2Time, *h2Peak, *h2Widt, *h2EvRa, *h2Dark;
 
 		TGraph *gPulse, *gMean, *giTOF, *goTOF;
 

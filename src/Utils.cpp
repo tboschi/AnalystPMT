@@ -118,7 +118,7 @@ bool Utils::OpenOuts(std::string fname)
 		}
 		else
 		{
-			OutFile->mkdir("2D");
+//			OutFile->mkdir("2D");
 			OutFile->mkdir("GR");
 			return true;
 		}

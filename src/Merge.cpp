@@ -80,6 +80,7 @@ int main(int argc, char **argv)
 	TH1I *tCard21 = new TH1I("hcard21", "Card 21 on event", 4, 0, 4);
 
 	TH2F *t2Dark = new TH2F("t2dark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	TH2F *t2EvRa = new TH2F("t2evra", "event rate per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 
 	TGraph *tMean = new TGraph(Utl->GetEvtLength());
 	TGraph *tiTOF = new TGraph(Utl->GetEvtLength());
@@ -122,6 +123,7 @@ int main(int argc, char **argv)
 	TH1F *hTOF;
 	TH1I *hCard21;
 	TH2F *h2Dark;
+	TH2F *h2EvRa;
 	TGraph *gMean;
 	TGraph *giTOF;
 	TGraph *goTOF;
@@ -160,6 +162,7 @@ int main(int argc, char **argv)
 		hEntry = (TH1F*) Utl->InFile->Get("hentry");
 		hBinWd = (TH1F*) Utl->InFile->Get("hbinwd");
 		h2Dark = (TH2F*) Utl->InFile->Get("h2dark");
+		h2EvRa = (TH2F*) Utl->InFile->Get("h2evra");
 
 		gMean = (TGraph*) Utl->InFile->Get("gmean");
 		giTOF = (TGraph*) Utl->InFile->Get("gitof");
@@ -181,20 +184,23 @@ int main(int argc, char **argv)
 			toTOF->SetPoint(i, x, y+y0/RF_In.size());
 		}
 
-		tPfile->Add(hPfile, 1.0/RF_In.size());
-		tEvent->Add(hEvent, 1.0/RF_In.size());
-		tEntry->Add(hEntry, 1.0/RF_In.size());
-		tBinWd->Add(hBinWd, 1.0/RF_In.size());
-		tBaseLine->Add(hBaseLine, 1.0/RF_In.size());
-		tPeak->Add(hPeak, 1.0/RF_In.size());
-		tValley->Add(hValley, 1.0/RF_In.size());
-		tTime->Add(hTime, 1.0/RF_In.size());
-		tWidth->Add(hWidth, 1.0/RF_In.size());
-		tCharge->Add(hCharge, 1.0/RF_In.size());
-		tEnergy->Add(hEnergy, 1.0/RF_In.size());
-		tTOF->Add(hTOF, 1.0/RF_In.size());
-		tCard21->Add(hCard21, 1.0/RF_In.size());
+		double scale = 1.0;
+
+		tPfile->Add(hPfile, scale);
+		tEvent->Add(hEvent, scale);
+		tEntry->Add(hEntry, scale);
+		tBinWd->Add(hBinWd, scale);
+		tBaseLine->Add(hBaseLine, scale);
+		tPeak->Add(hPeak, scale);
+		tValley->Add(hValley, scale);
+		tTime->Add(hTime, scale);
+		tWidth->Add(hWidth, scale);
+		tCharge->Add(hCharge, scale);
+		tEnergy->Add(hEnergy, scale);
+		tTOF->Add(hTOF, scale);
+		tCard21->Add(hCard21, scale);
 		t2Dark->Add(h2Dark, 1.0/RF_In.size());
+		t2EvRa->Add(h2EvRa, 1.0/RF_In.size());
 	}
 
 //Write
@@ -213,6 +219,11 @@ int main(int argc, char **argv)
 	t2Dark->SetStats(kFALSE);
 	t2Dark->SetContour(40);
 	t2Dark->SetOption("COLZ10TEXT");
+	t2EvRa->SetStats(kFALSE);
+	t2EvRa->SetContour(40);
+	t2EvRa->SetOption("COLZ10TEXT");
+
+
 
 	tPfile->GetXaxis()->SetTitle("time");
 	tEvent->GetXaxis()->SetTitle("pmt fired");
@@ -220,6 +231,8 @@ int main(int argc, char **argv)
 	tBinWd->GetXaxis()->SetTitle("width");
 	t2Dark->GetXaxis()->SetTitle("x");
 	t2Dark->GetYaxis()->SetTitle("z");
+	t2EvRa->GetXaxis()->SetTitle("x");
+	t2EvRa->GetYaxis()->SetTitle("z");
 	tMean->GetXaxis()->SetTitle("time");
 	tiTOF->GetXaxis()->SetTitle("time");
 	toTOF->GetXaxis()->SetTitle("time");
@@ -248,6 +261,7 @@ int main(int argc, char **argv)
 	tEntry->Write();
 	tBinWd->Write();
 	t2Dark->Write();
+	t2EvRa->Write();
 	tMean->Write("tMean");
 	tiTOF->Write("tiTOF");
 	toTOF->Write("toTOF");
