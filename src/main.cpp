@@ -60,13 +60,13 @@ int main(int argc, char** argv)
 
 	}
 
-	ssL.str("");
-	ssL.clear();
-	ssL << "./Merge ";
-	if (fold[fold.length()-1] == '/') ssL << fold << "result/";
-	else ssL << fold << "/result/";
-	std::cout << ssL.str() << std::endl;
-	system(ssL.str().c_str());
+//	ssL.str("");
+//	ssL.clear();
+//	ssL << "./Merge ";
+//	if (fold[fold.length()-1] == '/') ssL << fold << "result/";
+//	else ssL << fold << "/result/";
+//	std::cout << ssL.str() << std::endl;
+//	system(ssL.str().c_str());
 
 	return 0;
 }

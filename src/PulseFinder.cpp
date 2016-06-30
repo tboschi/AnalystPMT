@@ -72,7 +72,7 @@ void PulseFinder::LoopTrg()
 			LoopEvents(TrgLabel);
       		}
 	}
-	Save_Hist();
+//	Save_Hist();
 //	Stat_Hist();
 
 	std::cout << "Multipurpose counter for double pulse counting: " << mc << std::endl;
@@ -228,6 +228,8 @@ void PulseFinder::FindEvents(int trg)
 			tPOS = 0;
 			tBIN = 0;
 			bc = 0;
+			if (i < 10)
+				Save_2DHist(trg, 0);
 		}
 
 		if (b > thr)
@@ -247,6 +249,7 @@ void PulseFinder::FindEvents(int trg)
 	}
 
 	hEntry->Fill(hPtrig->GetEntries());
+
 }
 
 //Fill events and selec signal from noise
@@ -565,7 +568,7 @@ void PulseFinder::Save_2DHist(int trg, int evt)
 	if (iVerb)
 		std::cout << "Saving 2D histograms...\n";
 
-	Utl->OutFile->cd("2D");
+	Utl->OutFile->cd("GR");
 
 	//1D plot
 	hPtrig->SetStats(kFALSE);
@@ -589,7 +592,7 @@ void PulseFinder::Save_2DHist(int trg, int evt)
 //	h2Time->SetStats(kFALSE);
 //	h2Peak->SetStats(kFALSE);
 //	h2Widt->SetStats(kFALSE);
-
+/*
 	h2Ener->GetXaxis()->SetTitle("x");
 	h2Ener->GetYaxis()->SetTitle("z");
 	h2Time->GetXaxis()->SetTitle("x");
@@ -652,6 +655,7 @@ void PulseFinder::Save_2DHist(int trg, int evt)
 //	}	
 //	h2Widt->GetZaxis()->SetRangeUser(Utl->MinV(vW), Utl->MaxV(vW));
 //	h2Widt->Write(ssName.str().c_str());
+//	*/
 }
 
 void PulseFinder::Save_GRHist(int trg, int ID, int evt)

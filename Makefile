@@ -29,6 +29,7 @@ clean:
 
 cpinclude:
 	cp $(SRC)PMTData.h inc/
+	cp $(SRC)PMTDataOld.h inc/
 	cp $(SRC)Utils.h inc/
 	cp $(SRC)PulseFinder.h inc/
 	cp $(SRC)EventReco.h inc/
