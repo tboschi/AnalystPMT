@@ -64,6 +64,7 @@ int main(int argc, char **argv)
 	int nbins = int(0.1*Utl->GetBuffer());
 	TH1F *tPfile = new TH1F("tpfile", "pulses in file", nbins, 0, xrange);	
 	TH1F *tEvent = new TH1F("tevent", "events freq", nbins/20, 0, xrange);
+	TH1F *tEvenT = new TH1F("tevenT", "events time", nbins, 0, xrange);
 	TH1F *tEntry = new TH1F("tentry", "entries freq", nbins/20, 0, xrange);
 	TH1F *tBinWd = new TH1F("tbinwd", "event width", 40, 0, 8);
 
@@ -90,6 +91,7 @@ int main(int argc, char **argv)
 	//Old objects to catch
 	TH1F *hPfile;
 	TH1F *hEvent;
+	TH1F *hEvenT;
 	TH1F *hEntry;
 	TH1F *hBinWd;
 	TH1F *hBaseLine;
@@ -140,6 +142,7 @@ int main(int argc, char **argv)
 		hCard21 = (TH1I*) Utl->InFile->Get("hcard21");
 		hPfile = (TH1F*) Utl->InFile->Get("hpfile");
 		hEvent = (TH1F*) Utl->InFile->Get("hevent");
+		hEvenT = (TH1F*) Utl->InFile->Get("hevenT");
 		hEntry = (TH1F*) Utl->InFile->Get("hentry");
 		hBinWd = (TH1F*) Utl->InFile->Get("hbinwd");
 		h2Dark = (TH2F*) Utl->InFile->Get("h2dark");
@@ -169,6 +172,7 @@ int main(int argc, char **argv)
 
 		tPfile->Add(hPfile, scale);
 		tEvent->Add(hEvent, scale);
+		tEvenT->Add(hEvenT, scale);
 		tEntry->Add(hEntry, scale);
 		tBinWd->Add(hBinWd, scale);
 		tBaseLine->Add(hBaseLine, scale);
@@ -196,6 +200,7 @@ int main(int argc, char **argv)
 	//Histograms
 	tPfile->SetStats(kFALSE);
 	tEvent->SetStats(kTRUE);
+	tEvenT->SetStats(kTRUE);
 	tEntry->SetStats(kTRUE);
 	tBinWd->SetStats(kTRUE);
 	t2Dark->SetStats(kFALSE);
@@ -209,6 +214,7 @@ int main(int argc, char **argv)
 
 	tPfile->GetXaxis()->SetTitle("time");
 	tEvent->GetXaxis()->SetTitle("pmt fired");
+	tEvenT->GetXaxis()->SetTitle("pmt fired");
 	tEntry->GetXaxis()->SetTitle("entries");
 	tBinWd->GetXaxis()->SetTitle("width");
 	t2Dark->GetXaxis()->SetTitle("x");
@@ -241,6 +247,7 @@ int main(int argc, char **argv)
 
 	tPfile->Write();
 	tEvent->Write();
+	tEvenT->Write();
 	tEntry->Write();
 	tBinWd->Write();
 	t2Dark->Write();

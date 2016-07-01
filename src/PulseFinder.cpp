@@ -216,6 +216,7 @@ void PulseFinder::FindEvents(int trg)
 			thr = Utl->GetThrEvent();
 			vEvt.push_back(tAVG/tBIN);	//Bin position
 			hEvent->Fill(tAVG/tPOS);	//Bin content
+			hEvenT->Fill(tAVG/tBIN);	//Bin position
 			hBinWd->Fill(bc*hPtrig->GetXaxis()->GetBinWidth(i));
 			if (iVerb > 3)
 			{
@@ -287,11 +288,11 @@ void PulseFinder::LoopEvents(int trg)
 					std::cout << "Looping over event " << k << std::endl;
 
 				mLength[ID] += fBW*Utl->GetBuffer();
-				++mER[ID];
 
 				if (fabs(ER->GettPeak()*fBW - vEvt.at(k)) <= Utl->GetThrSignal())
 				{
 					mLength[ID] -= Utl->GetThrSignal();	//Reduce time window
+					++mER[ID];
 
 					bVETO = 0;
 					for (int i = 0; i < vVETO.size(); ++i)
@@ -327,7 +328,7 @@ void PulseFinder::LoopEvents(int trg)
 					}
 
 					Fill1DHist(ER);		//Histograms ready to be saved
-					std::cout << ID << " time " << fTime << "\t" << fTime_ << std::endl;
+//					std::cout << ID << " time " << fTime << "\t" << fTime_ << std::endl;
 					fTime_ = fTime;
 				}
 				else
@@ -422,6 +423,7 @@ void PulseFinder::NewHist()
 	hPtrig = new TH1F("hptrig", "Pulses in trigger", nbins/10, 0, xrange);
 	hPfile = new TH1F("hpfile", "Pulses in file", nbins, 0, xrange);	
 	hEvent = new TH1F("hevent", "Events freq", nbins/20, 0, xrange);
+	hEvenT = new TH1F("hevenT", "Events time", nbins, 0, xrange);
 	hEntry = new TH1F("hentry", "Entries freq", nbins/20, 0, xrange);
 	hBinWd = new TH1F("hbinwd", "Event width", 40, 0, 8);
 
@@ -521,6 +523,7 @@ void PulseFinder::Save_Hist()
 
 	hPfile->SetStats(kFALSE);
 	hEvent->SetStats(kTRUE);
+	hEvenT->SetStats(kTRUE);
 	hEntry->SetStats(kTRUE);
 	hBinWd->SetStats(kTRUE);
 	h2Dark->SetStats(kFALSE);
@@ -533,6 +536,7 @@ void PulseFinder::Save_Hist()
 
 	hPfile->GetXaxis()->SetTitle("time");
 	hEvent->GetXaxis()->SetTitle("pmt fired");
+	hEvenT->GetXaxis()->SetTitle("pmt fired");
 	hEntry->GetXaxis()->SetTitle("entries");
 	hBinWd->GetXaxis()->SetTitle("width");
 
@@ -569,6 +573,7 @@ void PulseFinder::Save_Hist()
 
 	hPfile->Write();
 	hEvent->Write();
+	hEvenT->Write();
 	hEntry->Write();
 	hBinWd->Write();
 	h2Dark->Write();
@@ -727,6 +732,7 @@ void PulseFinder::CleanAll()
 	hPtrig->Delete(); 
 	hPfile->Delete();
 	hEvent->Delete();
+	hEvenT->Delete();
 	hEntry->Delete();
 	hBinWd->Delete();
 	         

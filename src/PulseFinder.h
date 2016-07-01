@@ -86,7 +86,7 @@ class PulseFinder
 		std::map<int, double> mLength;		//total time for rate count
 
 		TH1I *hCard21;
-		TH1F *hPulse, *hPtrig, *hPfile, *hEvent, *hEntry, *hBinWd;
+		TH1F *hPulse, *hPtrig, *hPfile, *hEvent, *hEvenT, *hEntry, *hBinWd;
 		TH1F *hBaseLine, *hPeak, *hValley, *hTime, *hWidth, *hCharge, *hEnergy, *hTOF, *hNext;
 		TH2F *h2Ener, *h2Time, *h2Peak, *h2Widt, *h2EvRa, *h2Dark;
 
