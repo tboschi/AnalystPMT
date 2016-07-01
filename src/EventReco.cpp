@@ -1,6 +1,14 @@
 #include "EventReco.h"
 
-EventReco::EventReco(int ent, int bin, int rwm)
+EventReco::EventReco(int ent, int bin, int rwm) :
+	fBaseLine(0),
+	fPeak(0),
+	fValley(0),
+	fCharge(0),
+	fEnergy(0),
+	ftCFD(0),
+	fZeroC(0),
+	fTOF(0)
 {
 	Utl = Utils::GetUtils();
 	iEnt = ent;			//tree entry

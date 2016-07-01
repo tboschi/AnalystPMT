@@ -69,15 +69,16 @@ int main(int argc, char **argv)
 
 //	TNtuple *tEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
 
-	TH1F *tBaseLine = new TH1F("hbaseline", "Baseline", 250, -0.005, 0.005);
-	TH1F *tPeak = new TH1F("hpeak", "Peak", 500, 0, 5);
-	TH1F *tValley = new TH1F("hvalley", "Valley from peak", 500, 0, 1);
-	TH1F *tTime = new TH1F("htime", "Time", nbins, 0, xrange);
-	TH1F *tWidth = new TH1F("hwidth", "Pulse width", 500, -0.1, 0.9);
-	TH1F *tCharge = new TH1F("hcharge", "Charge", 500, -0.005, 0.075);
-	TH1F *tEnergy = new TH1F("henergy", "Energy", 500, -0.005, 0.095);
-	TH1F *tTOF = new TH1F("htof", "Time of flight", nbins, -xrange, xrange);
-	TH1I *tCard21 = new TH1I("hcard21", "Card 21 on event", 4, 0, 4);
+	TH1F *tBaseLine = new TH1F("tbaseline", "Baseline", 250, -0.005, 0.005);
+	TH1F *tPeak = new TH1F("tpeak", "Peak", 500, 0, 5);
+	TH1F *tValley = new TH1F("tvalley", "Valley from peak", 200, 0, 1);
+	TH1F *tTime = new TH1F("ttime", "Time", nbins, 0, xrange);
+	TH1F *tWidth = new TH1F("twidth", "Pulse width", 500, -0.1, 0.9);
+	TH1F *tCharge = new TH1F("tcharge", "Charge", 500, -0.005, 0.075);
+	TH1F *tEnergy = new TH1F("tenergy", "Energy", 500, -0.005, 0.095);
+	TH1F *tTOF = new TH1F("ttof", "Time of flight", nbins, -xrange, xrange);
+	TH1F *tNext = new TH1F("tnext", "Time of flight", nbins, 0, xrange);
+	TH1I *tCard21 = new TH1I("tcard21", "Card 21 on event", 4, 0, 4);
 
 	TH2F *t2Dark = new TH2F("t2dark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 	TH2F *t2EvRa = new TH2F("t2evra", "event rate per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
@@ -86,33 +87,11 @@ int main(int argc, char **argv)
 	TGraph *tiTOF = new TGraph(Utl->GetEvtLength());
 	TGraph *toTOF = new TGraph(Utl->GetEvtLength());
 
-/*	TTree *tTreeEvent = new TTree("tEvent", "Event's pulses tree container");
-
-	float fBaseLine;
-	float fPeak;
-	float fValley;
-	float fTime;
-	float fWidth;
-	float fCharge;
-	float fEnergy;
-	float fTOF;
-
-	tEvent->Branch("Baseline", &fBaseLine, "fBaseLine/F");
-	tEvent->Branch("Peak", &fPeak, "fPeak/F");
-	tEvent->Branch("P2V", &fValley, "fValley/F");
-	tEvent->Branch("Time", &fTime, "fTime/F");
-	tEvent->Branch("Width", &fWidth, "fWidth/F");
-	tEvent->Branch("Charge", &fCharge, "fCharge/F");
-	tEvent->Branch("Energy", &fEnergy, "fEnergy/F");
-	tEvent->Branch("TOF", &fTOF, "fTOF/F");
-*/
-
-	//Old onjects to catch
+	//Old objects to catch
 	TH1F *hPfile;
 	TH1F *hEvent;
 	TH1F *hEntry;
 	TH1F *hBinWd;
-//	TNtuple *nEvent;
 	TH1F *hBaseLine;
 	TH1F *hPeak;
 	TH1F *hValley;
@@ -121,6 +100,7 @@ int main(int argc, char **argv)
 	TH1F *hCharge;
 	TH1F *hEnergy;
 	TH1F *hTOF;
+	TH1F *hNext;
 	TH1I *hCard21;
 	TH2F *h2Dark;
 	TH2F *h2EvRa;
@@ -134,7 +114,7 @@ int main(int argc, char **argv)
 
 	for (int v = 0; v < RF_In.size(); v++)
 	{
-		std::cout << Utl->OpenIns(RF_In.at(v)) << std::endl;
+		Utl->OpenIns(RF_In.at(v));
 		std::cout << "Opening " << Utl->InFile->GetName() << std::endl;
 
 //Copy objects
@@ -156,6 +136,7 @@ int main(int argc, char **argv)
 		hCharge = (TH1F*) Utl->InFile->Get("hcharge");
 		hEnergy = (TH1F*) Utl->InFile->Get("henergy");
 		hTOF = (TH1F*) Utl->InFile->Get("htof");
+		hNext = (TH1F*) Utl->InFile->Get("hnext");
 		hCard21 = (TH1I*) Utl->InFile->Get("hcard21");
 		hPfile = (TH1F*) Utl->InFile->Get("hpfile");
 		hEvent = (TH1F*) Utl->InFile->Get("hevent");
@@ -198,6 +179,7 @@ int main(int argc, char **argv)
 		tCharge->Add(hCharge, scale);
 		tEnergy->Add(hEnergy, scale);
 		tTOF->Add(hTOF, scale);
+		tNext->Add(hNext, scale);
 		tCard21->Add(hCard21, scale);
 		t2Dark->Add(h2Dark, 1.0/RF_In.size());
 		t2EvRa->Add(h2EvRa, 1.0/RF_In.size());
@@ -254,6 +236,7 @@ int main(int argc, char **argv)
 	tCharge->Write();
 	tEnergy->Write();
 	tTOF->Write();
+	tNext->Write();
 	tCard21->Write();
 
 	tPfile->Write();
@@ -266,9 +249,7 @@ int main(int argc, char **argv)
 	tiTOF->Write("tiTOF");
 	toTOF->Write("toTOF");
 
-	std::cout << "asd0\n";
 	tDaisy->Merge(outF, 1000);
-	std::cout << "asd1\n";
 
 //	outF->Close();
 	Utl->InFile->Close();

@@ -79,7 +79,7 @@ class PulseFinder
 		std::map<int, std::vector<EventReco*> > mPulseER;
 		std::map<int, std::vector<double> > mPulseT;
 		std::vector<int> vTime;
-		std::vector<double> vVETO, vMRD2, vMRD4;
+		std::vector<double> vVETO, vMRD2, vMRD3;
 		std::vector<double> vEvt;
 		std::vector<double> vE, vT, vP, vW;
 		std::map<int, double> mDR, mER;		//DarkRate and EventRate pulses count
@@ -87,7 +87,7 @@ class PulseFinder
 
 		TH1I *hCard21;
 		TH1F *hPulse, *hPtrig, *hPfile, *hEvent, *hEntry, *hBinWd;
-		TH1F *hBaseLine, *hPeak, *hValley, *hTime, *hWidth, *hCharge, *hEnergy, *hTOF;
+		TH1F *hBaseLine, *hPeak, *hValley, *hTime, *hWidth, *hCharge, *hEnergy, *hTOF, *hNext;
 		TH2F *h2Ener, *h2Time, *h2Peak, *h2Widt, *h2EvRa, *h2Dark;
 
 		TGraph *gPulse, *gMean, *giTOF, *goTOF;
@@ -97,13 +97,16 @@ class PulseFinder
 		float fPeak;
 		float fValley;
 		float fTime;
+		float fTime_;
 		float fWidth;
 		float fCharge;
 		float fEnergy;
 		float fTOF;
+		float fNext;
+		int iID;
 		bool bVETO;
 		bool bMRD2;
-		bool bMRD4;
+		bool bMRD3;
 };
 
 #endif

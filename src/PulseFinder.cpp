@@ -34,8 +34,8 @@ void PulseFinder::LoopTrg()
 	Utl->OutFile->cd();
 
 	//Counters
-	int mc = 0;
-	int cM = 0, cI = 0, cO = 0, GC = 0;
+	mc = 0;
+	cM = 0, cI = 0, cO = 0, GC = 0;
 
 	//Compute entries
 	PMT->GetEntry(PMT->fChain->GetEntriesFast()-1);
@@ -75,7 +75,7 @@ void PulseFinder::LoopTrg()
 	Save_Hist();
 //	Stat_Hist();
 
-	std::cout << "Multipurpose counter for double pulse counting: " << mc << std::endl;
+	std::cout << "Multipurpose counter: " << mc << std::endl;
 }
 
 //Loop over all PMT IDs, take care of clearing mPulse
@@ -83,7 +83,7 @@ void PulseFinder::LoopPMT(int trg)
 {
 	vVETO.clear();
 	vMRD2.clear();
-	vMRD4.clear();
+	vMRD3.clear();
 	RWM = 0;
 
 	double peak, y, y_;
@@ -98,6 +98,7 @@ void PulseFinder::LoopPMT(int trg)
 
 	for (int j = 0; j < 256; j += Utl->GetSample())
 	{
+		
 		//Change entry
 		PMT->GetEntry(trg+j);
 		if (iVerb > 2)
@@ -105,7 +106,8 @@ void PulseFinder::LoopPMT(int trg)
 			std::cout << "Entry " << trg+j << "\t";
 			std::cout << "PMTID " << PMT->PMTID << std::endl;
 		}
-		if (PMT->CardID < 21) FindPulses(trg+j);
+		if (PMT->CardID < 21) 
+			FindPulses(trg+j);
 		else if (PMT->Channel != 2)
 		{
 			for (int k = 0; k < Utl->GetBuffer(); ++k)		//k is bin position
@@ -126,7 +128,7 @@ void PulseFinder::LoopPMT(int trg)
 					if (PMT->Channel == 1)
 						vMRD2.push_back(time*fBW);
 					if (PMT->Channel == 3)
-						vMRD4.push_back(time*fBW);
+						vMRD3.push_back(time*fBW);
 
 					if (time >= k)
 						k = time + Utl->GetShapingTime();	//FFW must be validated
@@ -257,12 +259,17 @@ void PulseFinder::LoopEvents(int trg)
 
 	std::vector<EventReco*>::iterator iE;
 	int PG = Utl->GetPrintGraph();
+	int ID_;
 
 	if (iVerb > 2)
 		std::cout << "Map size " << mPulseER.size() << std::endl;
 
 	for (int ID = 1; ID < 61; ++ID)
 	{
+		fTime = 0;
+		fTime_ = 80;
+		
+		mc += mPulseER[ID].size();	//Count graphs
 		iE = mPulseER[ID].begin();	//Loop over pulseER
 		for ( ; iE != mPulseER[ID].end(); ++iE, ++GC)	//Loop on pulses
 		{
@@ -308,18 +315,20 @@ void PulseFinder::LoopEvents(int trg)
 						else hCard21->Fill(1);
 					}
 	
-					bMRD4 = 0;
-					for (int i = 0; i < vMRD4.size(); ++i)
+					bMRD3 = 0;
+					for (int i = 0; i < vMRD3.size(); ++i)
 					{
-						if (fabs(ER->GettPeak()*fBW - vMRD4.at(i)) <= Utl->GetThrSignal())
+						if (fabs(ER->GettPeak()*fBW - vMRD3.at(i)) <= Utl->GetThrSignal())
 						{
-							bMRD4 = 1;
+							bMRD3 = 1;
 							break;
 						}
 						else hCard21->Fill(3);
 					}
 
 					Fill1DHist(ER);		//Histograms ready to be saved
+					std::cout << ID << " time " << fTime << "\t" << fTime_ << std::endl;
+					fTime_ = fTime;
 				}
 				else
 					++mDR[ID];
@@ -331,7 +340,8 @@ void PulseFinder::LoopEvents(int trg)
 			GraphAVG(gMean, cM);
 			if (ER->GetTOF() > Utl->GetLowB() && ER->GetTOF() < Utl->GetUpB())
 				GraphAVG(giTOF, cI);
-			else GraphAVG(goTOF, cO);
+			else
+				GraphAVG(goTOF, cO);
 
 			if (Utl->GetPrintGraph() > 0 ? (GC % Utl->GetPrintGraph() == 1) : 0)	//Prints a graph
 				Save_GRHist(trg, ID, iE - mPulseER[ID].begin());
@@ -342,7 +352,7 @@ void PulseFinder::LoopEvents(int trg)
 }
 
 
-
+/////////////////////////////////////////////
 
 //void PulseFinder::FillHist(int trg, int spl, int evt)
 void PulseFinder::Fill1DHist(EventReco *ER)
@@ -378,6 +388,7 @@ void PulseFinder::Fill1DHist(EventReco *ER)
 	fCharge = ER->GetCharge();
 	fEnergy = ER->GetEnergy();
 	fTOF = ER->GetTOF();
+	fNext =(fTime - fTime_) >= 0 ? (fTime-fTime_) : -1;
 
 	hBaseLine->Fill(fBaseLine);
 	hPeak->Fill(fPeak);
@@ -387,6 +398,7 @@ void PulseFinder::Fill1DHist(EventReco *ER)
 	hCharge->Fill(fCharge);
 	hEnergy->Fill(fEnergy);
 	hTOF->Fill(fTOF);
+	hNext->Fill(fNext);
 
 	tEvent->Fill();
 }
@@ -417,12 +429,13 @@ void PulseFinder::NewHist()
 
 	hBaseLine = new TH1F("hbaseline", "Baseline", 250, -0.005, 0.005);
 	hPeak = new TH1F("hpeak", "Peak", 500, 0, 5);
-	hValley = new TH1F("hvalley", "Valley from peak", 500, 0, 1);
+	hValley = new TH1F("hvalley", "Valley from peak", 200, 0, 1);
 	hTime = new TH1F("htime", "Time", nbins, 0, xrange);
 	hWidth = new TH1F("hwidth", "Pulse width", 500, -0.1, 0.9);
 	hCharge = new TH1F("hcharge", "Charge", 500, -0.005, 0.075);
 	hEnergy = new TH1F("henergy", "Energy", 500, -0.005, 0.095);
 	hTOF = new TH1F("htof", "Time of flight", nbins, -xrange, xrange);
+	hNext = new TH1F("hnext", "Next pulse", nbins, 0, xrange);
 	hCard21 = new TH1I("hcard21", "Card 21 on event", 4, 0, 4);
 
 //	h2Ener = new TH2F("h2ener", "Energy", 8, -0.5, 7.5, 8, -0.5, 7.5);
@@ -445,9 +458,10 @@ void PulseFinder::NewHist()
 	tEvent->Branch("Charge", &fCharge, "fCharge/F");
 	tEvent->Branch("Energy", &fEnergy, "fEnergy/F");
 	tEvent->Branch("TOF", &fTOF, "fTOF/F");
+	tEvent->Branch("Next", &fNext, "fNext/F");
 	tEvent->Branch("VETO", &bVETO, "bVETO/O");
 	tEvent->Branch("MRD2", &bMRD2, "bMRD2/O");
-	tEvent->Branch("MRD4", &bMRD4, "bMRD4/O");
+	tEvent->Branch("MRD3", &bMRD3, "bMRD3/O");
 }
 
 void PulseFinder::FillRateHist()
@@ -464,8 +478,11 @@ void PulseFinder::FillRateHist()
 	{
 		Pos = Utl->Mapper(ID);
 
-		mDR[ID] /= mLength[ID];
-		mER[ID] /= mLength[ID];
+		if (mLength[ID] != 0)
+		{
+			mDR[ID] /= mLength[ID];
+			mER[ID] /= mLength[ID];
+		}			
 		mDR[ID] *= 1000000;
 		mER[ID] *= 1000000;
 
@@ -483,14 +500,14 @@ void PulseFinder::FillRateHist()
 void PulseFinder::GraphAVG(TGraph *g, int &cc)
 {
 	double x, y0, y;
-	++cc;
 	for (int i = 0; i < gPulse->GetN(); ++i)
 	{
 		gPulse->GetPoint(i, x, y0);
 		g->GetPoint(i, x, y);
-		g->SetPoint(i, fBW*i, ((cc-1)*y+y0)/cc);
+		g->SetPoint(i, fBW*i, (cc*y+y0)/(cc+1));
 		if (y0 > 1000) std::cout << "Warning " << cc << std::endl;
 	}
+	++cc;
 }
 
 //Utility stuff
@@ -547,6 +564,7 @@ void PulseFinder::Save_Hist()
 	hCharge->Write();
 	hEnergy->Write();
 	hTOF->Write();
+	hNext->Write();
 	hCard21->Write();
 
 	hPfile->Write();
@@ -720,6 +738,7 @@ void PulseFinder::CleanAll()
 	hCharge->Delete();
 	hEnergy->Delete();
 	hTOF->Delete();
+	hNext->Delete();
 	hCard21->Delete();
          
 //	h2Ener->Delete();

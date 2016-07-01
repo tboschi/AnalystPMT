@@ -22,13 +22,12 @@ merge: clean cpinclude
 	g++ $(SRC)PMTData.C $(SRC)Utils.cpp $(SRC)Merge.cpp -fPIC -I $(INC) $(CFLAG) -o Merge
 
 clean:
-	rm -f $(OUT)
-	rm -f libPMTH*
 	rm -f inc/*
 	rm -f lib/*
 
 cpinclude:
 	cp $(SRC)PMTData.h inc/
+	cp $(SRC)PMTDataOld.h inc/
 	cp $(SRC)Utils.h inc/
 	cp $(SRC)PulseFinder.h inc/
 	cp $(SRC)EventReco.h inc/

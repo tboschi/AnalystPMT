@@ -430,6 +430,13 @@ unsigned int Utils::GetNumTrg()
 
 PMTData *Utils::GetPMT()
 {
+	PMT->fChain->SetBranchStatus("*", 0);
+	PMT->fChain->SetBranchStatus("Trigger", 1);
+	PMT->fChain->SetBranchStatus("CardID", 1);
+	PMT->fChain->SetBranchStatus("Channel", 1);
+	PMT->fChain->SetBranchStatus("PMTID", 1);
+	PMT->fChain->SetBranchStatus("Data", 1);
+
 	return PMT;
 }
 
