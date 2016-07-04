@@ -157,6 +157,7 @@ class Utils
 
 		//Handler for in and out root file
 		TFile *InFile, *OutFile;
+		std::ofstream fout;
 
 	private:
 
@@ -212,7 +213,6 @@ class Utils
 
 		//Other variables
 		std::string DirName;
-		std::ofstream fout;
 };
 
 #endif

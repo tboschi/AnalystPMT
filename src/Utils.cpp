@@ -38,7 +38,7 @@ int Utils::LocMaximum(float *data, int j, double &max)
 {
 	max = data[j];
 	int time = j;
-	for (int i = j-1; i < j+GetShapingTime()+1; i++)
+	for (int i = j-5; i < j+GetShapingTime()-4; i++)
 	{
 		if (GetVerbosity() > 6)
 			std::cout << i << "\t" << data[i] << std::endl;

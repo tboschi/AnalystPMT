@@ -11,6 +11,8 @@ EventReco::EventReco(int ent, int bin, int rwm) :
 	fTOF(0)
 {
 	Utl = Utils::GetUtils();
+	fBW = Utl->GetBinWidth();
+	iEL = Utl->GetEvtLength();
 	iEnt = ent;			//tree entry
 	iPeak = bin;			//bin is position of peak in bins
 	iRWM = rwm;			//rwm is RWM  pos
@@ -18,29 +20,59 @@ EventReco::EventReco(int ent, int bin, int rwm) :
 	PMT = Utl->GetPMT();
 	PMT->GetEntry(GetEntry());
 
-	NewP = int(Utl->GetEvtLength()*Utl->GetPercent()*0.01);	//np is the Pulse position of peak
-	Pulse = new float[Utl->GetEvtLength()];
-	fBW = Utl->GetBinWidth();
-	iEL = Utl->GetEvtLength();
+	Init(iEL);
 //	PMT->GetEntry(ent);
-	for (int i = 0; i < Utl->GetEvtLength(); i++)
+	for (int i = 0; i < iEL; i++)
 	{
 		if (i+GettPeak()-NewP < 0)
-			Pulse[i] = PMT->Data[i + GettPeak() - NewP + Utl->GetEvtLength()];	//i == np -> tPeak
+			Pulse[i] = PMT->Data[i + GettPeak() - NewP + iEL];	//i == np -> tPeak
 		else if (i+GettPeak()-NewP >= Utl->GetBuffer())
-			Pulse[i] = PMT->Data[i + GettPeak() - NewP - Utl->GetEvtLength()];
+			Pulse[i] = PMT->Data[i + GettPeak() - NewP - iEL];
 		else Pulse[i] = PMT->Data[i+GettPeak()-NewP];
 	}
 //	if (Utl->GetPrintGraph()) gPulse = new TGraph(iEL);
-	gPulse = new TGraph(iEL);
 //	LoadParam();
+}
+
+EventReco::EventReco(TGraph* iG) 
+{
+	Utl = Utils::GetUtils();
+	fBW = Utl->GetBinWidth();
+	iEL = iG->GetN();
+	iPeak = 0;
+	iRWM = 0;
+
+	Init(iEL);
+	double x, y;
+	for (int i = 0; i < iG->GetN(); i++)
+	{
+		iG->GetPoint(i, x, y);
+		Pulse[i] = y;
+	}
+	NewP = Utl->LocMaximum(Pulse, NewP, fPeak); 
+	iPeak = NewP;
 }
 
 EventReco::~EventReco()
 {
 	delete Pulse;
-//	if (Utl->GetPrintGraph()) delete gPulse;
 	delete gPulse;
+}
+
+void EventReco::Init(int length)
+{
+	fBaseLine = 0;
+	fPeak = 0;
+	fValley = 0;
+	fCharge = 0;
+	fEnergy = 0;
+	ftCFD = 0;
+	fZeroC = 0;
+	fTOF = 0;
+
+	NewP = int(length*Utl->GetPercent()*0.01);	//np is the Pulse position of peak
+	Pulse = new float[length];
+	gPulse = new TGraph(length);
 }
 
 TGraph *EventReco::LoadGraph()
@@ -99,7 +131,7 @@ void EventReco::Print()
 
 void EventReco::SetBaseLine()		//Set to zero the avg of the first 20 points
 {
-	double x, y, sum = 0;
+	double sum = 0;
 	for (int i = 0; i < 20; i++)
 		sum += Pulse[i];
 
@@ -125,6 +157,7 @@ void EventReco::SetPeak()
 	}
 	Peak = max;
 	tPeak = p;	*/
+
 	fPeak = Pulse[NewP];
 //	fPeak = Utl->LocMaximum(Pulse, NewP, itPeak);
 }

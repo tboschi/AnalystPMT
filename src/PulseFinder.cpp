@@ -73,6 +73,7 @@ void PulseFinder::LoopTrg()
       		}
 	}
 	Save_Hist();
+	Print_Dat();
 //	Stat_Hist();
 
 	std::cout << "Multipurpose counter: " << mc << std::endl;
@@ -216,7 +217,8 @@ void PulseFinder::FindEvents(int trg)
 			thr = Utl->GetThrEvent();
 			vEvt.push_back(tAVG/tBIN);	//Bin position
 			hEvent->Fill(tAVG/tPOS);	//Bin content
-			hEvenT->Fill(tAVG/tBIN);	//Bin position
+//			hEvenT->Fill(tAVG/tBIN);	//Bin position
+			hEvenT->Fill(hPtrig->GetXaxis()->GetBinCenter(i));	//Bin position
 			hBinWd->Fill(bc*hPtrig->GetXaxis()->GetBinWidth(i));
 			if (iVerb > 3)
 			{
@@ -326,7 +328,7 @@ void PulseFinder::LoopEvents(int trg)
 						}
 						else hCard21->Fill(3);
 					}
-
+					iID = ID;
 					Fill1DHist(ER);		//Histograms ready to be saved
 //					std::cout << ID << " time " << fTime << "\t" << fTime_ << std::endl;
 					fTime_ = fTime;
@@ -423,7 +425,7 @@ void PulseFinder::NewHist()
 	hPtrig = new TH1F("hptrig", "Pulses in trigger", nbins/10, 0, xrange);
 	hPfile = new TH1F("hpfile", "Pulses in file", nbins, 0, xrange);	
 	hEvent = new TH1F("hevent", "Events freq", nbins/20, 0, xrange);
-	hEvenT = new TH1F("hevenT", "Events time", nbins, 0, xrange);
+	hEvenT = new TH1F("hevenT", "Events time", nbins/10, 0, xrange);
 	hEntry = new TH1F("hentry", "Entries freq", nbins/20, 0, xrange);
 	hBinWd = new TH1F("hbinwd", "Event width", 40, 0, 8);
 
@@ -464,6 +466,7 @@ void PulseFinder::NewHist()
 	tEvent->Branch("VETO", &bVETO, "bVETO/O");
 	tEvent->Branch("MRD2", &bMRD2, "bMRD2/O");
 	tEvent->Branch("MRD3", &bMRD3, "bMRD3/O");
+	tEvent->Branch("PMTID", &iID, "iID/I");
 }
 
 void PulseFinder::FillRateHist()
@@ -695,6 +698,49 @@ void PulseFinder::Save_GRHist(int trg, int ID, int evt)
 	gPulse->SetTitle("Pulse");
 
 	gPulse->Write(ssName.str().c_str());
+}
+
+void PulseFinder::Print_Dat()
+{
+	EventReco ER_M(gMean);
+	ER_M.LoadParam();
+//	Utl->fout
+	Utl->fout << "Mean graph:\n";
+	Utl->fout << "Baseline \t" << ER_M.GetBaseLine() << std::endl;
+	Utl->fout << "Peak     \t" << ER_M.GetPeak() << std::endl;
+	Utl->fout << "Peak time\t" << fBW*ER_M.GettPeak() << std::endl;
+	Utl->fout << "Valley   \t" << ER_M.GetValley() << std::endl;
+	Utl->fout << "Valley t \t" << fBW*ER_M.GettValley() << std::endl;
+	Utl->fout << "tCFD     \t" << ER_M.GettCFD() << std::endl;
+	Utl->fout << "Zero Cr  \t" << ER_M.GetZeroC() << std::endl;
+	Utl->fout << "Charge   \t" << ER_M.GetCharge() << std::endl;
+	Utl->fout << "Energy   \t" << ER_M.GetEnergy() << std::endl;
+
+	EventReco ER_I(giTOF);
+	ER_I.LoadParam();
+	Utl->fout << "\nIn coincidence graph:\n";
+	Utl->fout << "Baseline \t" << ER_I.GetBaseLine() << std::endl;
+	Utl->fout << "Peak     \t" << ER_I.GetPeak() << std::endl;
+	Utl->fout << "Peak time\t" << fBW*ER_I.GettPeak() << std::endl;
+	Utl->fout << "Valley   \t" << ER_I.GetValley() << std::endl;
+	Utl->fout << "Valley t \t" << fBW*ER_I.GettValley() << std::endl;
+	Utl->fout << "tCFD     \t" << ER_I.GettCFD() << std::endl;
+	Utl->fout << "Zero Cr  \t" << ER_I.GetZeroC() << std::endl;
+	Utl->fout << "Charge   \t" << ER_I.GetCharge() << std::endl;
+	Utl->fout << "Energy   \t" << ER_I.GetEnergy() << std::endl;
+
+	EventReco ER_O(goTOF);
+	ER_O.LoadParam();
+	Utl->fout << "\nOut coincidence graph:\n";
+	Utl->fout << "Baseline \t" << ER_O.GetBaseLine() << std::endl;
+	Utl->fout << "Peak     \t" << ER_O.GetPeak() << std::endl;
+	Utl->fout << "Peak time\t" << fBW*ER_O.GettPeak() << std::endl;
+	Utl->fout << "Valley   \t" << ER_O.GetValley() << std::endl;
+	Utl->fout << "Valley t \t" << fBW*ER_O.GettValley() << std::endl;
+	Utl->fout << "tCFD     \t" << ER_O.GettCFD() << std::endl;
+	Utl->fout << "Zero Cr  \t" << ER_O.GetZeroC() << std::endl;
+	Utl->fout << "Charge   \t" << ER_O.GetCharge() << std::endl;
+	Utl->fout << "Energy   \t" << ER_O.GetEnergy() << std::endl;
 }
 
 void PulseFinder::ResetHist()

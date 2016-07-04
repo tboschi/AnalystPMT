@@ -31,8 +31,10 @@ class EventReco
 {
 	public:
 		EventReco(int ent, int bin, int rwm);
+		EventReco(TGraph* iG);
 		~EventReco();
 
+		void Init(int length);
 		TGraph *LoadGraph();
 		TGraph *LoadDeriv();
 //		void FillN(TNtuple *nT);

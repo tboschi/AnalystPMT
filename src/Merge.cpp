@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 	int nbins = int(0.1*Utl->GetBuffer());
 	TH1F *tPfile = new TH1F("tpfile", "pulses in file", nbins, 0, xrange);	
 	TH1F *tEvent = new TH1F("tevent", "events freq", nbins/20, 0, xrange);
-	TH1F *tEvenT = new TH1F("tevenT", "events time", nbins, 0, xrange);
+	TH1F *tEvenT = new TH1F("tevenT", "events time", nbins/10, 0, xrange);
 	TH1F *tEntry = new TH1F("tentry", "entries freq", nbins/20, 0, xrange);
 	TH1F *tBinWd = new TH1F("tbinwd", "event width", 40, 0, 8);
 

@@ -54,6 +54,7 @@ class PulseFinder
 		void Save_Hist();
 		void Save_2DHist(int trg, int evt);
 		void Save_GRHist(int trg, int ID, int evt);
+		void Print_Dat();
 		void ResetHist();
 		void CleanAll();
 		void CleanER();
@@ -61,7 +62,6 @@ class PulseFinder
 //		void Print_2DStats(int trg, int evt);
 
 	private:
-
 
 		Utils *Utl;
 		PMTData *PMT;
