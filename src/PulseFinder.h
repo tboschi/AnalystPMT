@@ -80,8 +80,8 @@ class PulseFinder
 		std::map<int, std::vector<double> > mPulseT;
 		std::vector<int> vTime;
 		std::vector<double> vVETO, vMRD2, vMRD3;
-		std::vector<double> vEvt;
-		std::vector<double> vE, vT, vP, vW;
+		std::vector<double> vEvtPos, vEvtBin;
+		std::vector<double> vE, vT;
 		std::map<int, double> mDR, mER;		//DarkRate and EventRate pulses count
 		std::map<int, double> mLength;		//total time for rate count
 

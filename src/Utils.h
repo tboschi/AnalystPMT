@@ -45,8 +45,8 @@ struct Analysis
 {
 	double E;	//Energy
 	double T;	//Time
-	double P;	//Peak
-	double W;	//Width
+//	double P;	//Peak
+//	double W;	//Width
 
 //	int ID;		//Pulse ID
 };
@@ -86,6 +86,7 @@ class Utils
 		double GetBinWidth();
 		int GetBuffer();
 		int GetPrintGraph();
+		int GetPrintEvent();
 		double GetPercent();
 		int GetEvtLength();
 		double GetLowB();
@@ -103,6 +104,7 @@ class Utils
 		void SetBinWidth(double emp);
 		void SetBuffer(int emp);
 		void SetPrintGraph(int emp);
+		void SetPrintEvent(int emp);
 		void SetPercent(double emp);
 		void SetEvtLength(int emp);
 		void SetLowB(double emp);
@@ -198,6 +200,7 @@ class Utils
 		int iVerbosity;		//Verbosity level
 		bool bDebug;		//Debuggin option
 		int iGraph;		//Graph printing frequency
+		int iEvent;		//2D event plot
 
 		double fBinWidth;	//Bin width
 		double fPercent;	//Peak position, in percentage of Event length

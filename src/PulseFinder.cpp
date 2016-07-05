@@ -27,7 +27,7 @@ PulseFinder::~PulseFinder()
 	Utl->Close();
 //	delete PMT;
 }
-
+//Main Loop
 //Loop over the triggers, divide them by the number of samples
 void PulseFinder::LoopTrg()
 {
@@ -67,7 +67,7 @@ void PulseFinder::LoopTrg()
 			FindEvents(TrgLabel);
 
 			if (iVerb)
-				std::cout << "Event size " << vEvt.size() << std::endl;
+				std::cout << "Event size " << vEvtPos.size() << std::endl;
 
 			LoopEvents(TrgLabel);
       		}
@@ -75,9 +75,8 @@ void PulseFinder::LoopTrg()
 	Save_Hist();
 	Print_Dat();
 //	Stat_Hist();
-
-	std::cout << "Multipurpose counter: " << mc << std::endl;
 }
+
 
 //Loop over all PMT IDs, take care of clearing mPulse
 void PulseFinder::LoopPMT(int trg)
@@ -204,7 +203,9 @@ void PulseFinder::FindEvents(int trg)
 	int b, b_, tBIN = 0, bc = 0;
 	double thr = Utl->GetThrEvent();
 	double tAVG = 0, tPOS = 0;
-	vEvt.clear();
+
+	vEvtPos.clear();
+	vEvtBin.clear();
 
 	for (int i = 0; i < 0.01*Utl->GetBuffer(); ++i)
 	{
@@ -215,16 +216,20 @@ void PulseFinder::FindEvents(int trg)
 		if ((b_ > thr) && (b < thr))
 		{
 			thr = Utl->GetThrEvent();
-			vEvt.push_back(tAVG/tBIN);	//Bin position
+
+			vEvtPos.push_back(tAVG/tBIN);	//Bin position
 			hEvent->Fill(tAVG/tPOS);	//Bin content
-//			hEvenT->Fill(tAVG/tBIN);	//Bin position
+			vEvtBin.push_back(tAVG/tPOS);	//Bin position
 			hEvenT->Fill(hPtrig->GetXaxis()->GetBinCenter(i));	//Bin position
+//			hEvenT->Fill(tAVG/tBIN);	//Bin position
+
 			hBinWd->Fill(bc*hPtrig->GetXaxis()->GetBinWidth(i));
+
 			if (iVerb > 3)
 			{
 				std::cout << "yBin " << i << " w/ ";
 				std::cout << tAVG/tPOS << "\t@ ";
-				std::cout << vEvt.at(vEvt.size()-1) << std::endl;
+				std::cout << tAVG/tBIN << std::endl;
 				std::cout << "bc " << bc*hPtrig->GetXaxis()->GetBinWidth(i) << std::endl;
 			}
 
@@ -262,39 +267,57 @@ void PulseFinder::LoopEvents(int trg)
 
 	std::vector<EventReco*>::iterator iE;
 	int PG = Utl->GetPrintGraph();
-	int ID_;
+	Analysis aEvt;
+	int tCC;
+
+	vE.clear();
+	vT.clear();
 
 	if (iVerb > 2)
 		std::cout << "Map size " << mPulseER.size() << std::endl;
 
-	for (int ID = 1; ID < 61; ++ID)
-	{
-		fTime = 0;
-		fTime_ = 80;
-		
-		mc += mPulseER[ID].size();	//Count graphs
-		iE = mPulseER[ID].begin();	//Loop over pulseER
-		for ( ; iE != mPulseER[ID].end(); ++iE, ++GC)	//Loop on pulses
+	
+	if (vEvtPos.size() == 0)
+		for (int ID = 1; ID < 61; ++ID)
 		{
-			ER = *(iE);		//Get pointer from EventReco
-			ER->LoadParam();
+			mLength[ID] += fBW*Utl->GetBuffer();
+			mDR[ID] += mPulseER[ID].size();	//Count graphs
+		}
+	else for (int k = 0; k < vEvtPos.size(); ++k)
+	{
+		for (int ID = 1; ID < 61; ++ID)
+		{
+			aEvt.E = 0;
+			aEvt.T = 0;
+			tCC = 0;
 
-			if (vEvt.size() == 0)
+			fTime = 0;
+			fTime_ = 80;
+		
+			mc += mPulseER[ID].size();	//Count graphs
+			iE = mPulseER[ID].begin();	//Loop over pulseER
+			for ( ; iE != mPulseER[ID].end(); ++iE, ++GC)	//Loop on pulses
 			{
-				mLength[ID] += fBW*Utl->GetBuffer();
-				++mDR[ID];
-			}
-			else for (int k = 0; k < vEvt.size(); ++k)
-			{
+				ER = *(iE);		//Get pointer from EventReco
+				ER->LoadParam();
+
 				if (iVerb)
 					std::cout << "Looping over event " << k << std::endl;
 
 				mLength[ID] += fBW*Utl->GetBuffer();
 
-				if (fabs(ER->GettPeak()*fBW - vEvt.at(k)) <= Utl->GetThrSignal())
+				if (fabs(ER->GettPeak()*fBW - vEvtPos.at(k)) <= Utl->GetThrSignal())
 				{
 					mLength[ID] -= Utl->GetThrSignal();	//Reduce time window
 					++mER[ID];
+					
+					if (vEvtBin.at(k) > Utl->GetPrintEvent())
+					{
+						aEvt.E += ER->GetEnergy();
+						if (aEvt.T < ER->GettCFD())
+							aEvt.T = ER->GettCFD(); 
+						++tCC;
+					}
 
 					bVETO = 0;
 					for (int i = 0; i < vVETO.size(); ++i)
@@ -348,7 +371,23 @@ void PulseFinder::LoopEvents(int trg)
 
 			if (Utl->GetPrintGraph() > 0 ? (GC % Utl->GetPrintGraph() == 1) : 0)	//Prints a graph
 				Save_GRHist(trg, ID, iE - mPulseER[ID].begin());
+//				Save_GRHist(trg, ID, GC);
+
+			if (vEvtBin.at(k) > Utl->GetPrintEvent())
+			{
+				if (aEvt.E > 0)
+					vE.push_back(aEvt.E);
+				if (aEvt.T > 0)
+				{
+//					aEvt.T /= tCC;
+					vT.push_back(aEvt.T);
+				}
+				Fill2DHist(ID, aEvt);
+			}
 		}
+
+		if (vEvtBin.at(k) > Utl->GetPrintEvent())
+			Save_2DHist(trg, k);
 	}
 
 	ResetHist();
@@ -410,8 +449,8 @@ void PulseFinder::Fill2DHist(int ID, Analysis Par)
 {
 	Coord Pos = Utl->Mapper(ID);
 
-//	h2Ener->SetBinContent(Pos.x+1, Pos.z+1, Par.E);
-//	h2Time->SetBinContent(Pos.x+1, Pos.z+1, Par.T);
+	h2Ener->SetBinContent(Pos.x+1, Pos.z+1, Par.E);
+	h2Time->SetBinContent(Pos.x+1, Pos.z+1, Par.T);
 //	h2Peak->SetBinContent(Pos.x+1, Pos.z+1, Par.P);
 //	h2Widt->SetBinContent(Pos.x+1, Pos.z+1, Par.W);
 }
@@ -419,6 +458,8 @@ void PulseFinder::Fill2DHist(int ID, Analysis Par)
 //Histograms
 void PulseFinder::NewHist()
 {
+	//Collective
+	//
 	double xrange = Utl->GetBuffer()*fBW;
 	int nbins = int(0.1*Utl->GetBuffer());
 	hPulse = new TH1F("hpulse", "Pulses", nbins, 0, xrange);
@@ -429,8 +470,8 @@ void PulseFinder::NewHist()
 	hEntry = new TH1F("hentry", "Entries freq", nbins/20, 0, xrange);
 	hBinWd = new TH1F("hbinwd", "Event width", 40, 0, 8);
 
-//	nEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
-
+	//Individual
+	//
 	hBaseLine = new TH1F("hbaseline", "Baseline", 250, -0.005, 0.005);
 	hPeak = new TH1F("hpeak", "Peak", 500, 0, 5);
 	hValley = new TH1F("hvalley", "Valley from peak", 200, 0, 1);
@@ -442,17 +483,23 @@ void PulseFinder::NewHist()
 	hNext = new TH1F("hnext", "Next pulse", nbins, 0, xrange);
 	hCard21 = new TH1I("hcard21", "Card 21 on event", 4, 0, 4);
 
-//	h2Ener = new TH2F("h2ener", "Energy", 8, -0.5, 7.5, 8, -0.5, 7.5);
-//	h2Time = new TH2F("h2time", "Time", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	//2D event plot
+	//
+	h2Ener = new TH2F("h2ener", "Energy", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	h2Time = new TH2F("h2time", "Time", 8, -0.5, 7.5, 8, -0.5, 7.5);
 //	h2Peak = new TH2F("h2peak", "Peak", 8, -0.5, 7.5, 8, -0.5, 7.5);
 //	h2Widt = new TH2F("h2widt", "width", 8, -0.5, 7.5, 8, -0.5, 7.5);
 	h2Dark = new TH2F("h2dark", "Dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 	h2EvRa = new TH2F("h2evra", "Event rate per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 
+	//Graph
+	//
 	gMean = new TGraph(Utl->GetEvtLength());
 	giTOF = new TGraph(Utl->GetEvtLength());
 	goTOF = new TGraph(Utl->GetEvtLength());
 
+	//Tree
+	//
 	tEvent = new TTree("tEvent", "Event's pulses tree container");
 	tEvent->Branch("Baseline", &fBaseLine, "fBaseLine/F");
 	tEvent->Branch("Peak", &fPeak, "fPeak/F");
@@ -606,13 +653,13 @@ void PulseFinder::Save_2DHist(int trg, int evt)
 	}
 
 	//2D plots
-//	h2Ener->SetContour(40);
-//	h2Time->SetContour(40);
+	h2Ener->SetContour(40);
+	h2Time->SetContour(40);
 //	h2Peak->SetContour(40);
 //	h2Widt->SetContour(40);
 
-//	h2Ener->SetStats(kFALSE);
-//	h2Time->SetStats(kFALSE);
+	h2Ener->SetStats(kFALSE);
+	h2Time->SetStats(kFALSE);
 //	h2Peak->SetStats(kFALSE);
 //	h2Widt->SetStats(kFALSE);
 
@@ -620,14 +667,14 @@ void PulseFinder::Save_2DHist(int trg, int evt)
 	h2Ener->GetYaxis()->SetTitle("z");
 	h2Time->GetXaxis()->SetTitle("x");
 	h2Time->GetYaxis()->SetTitle("z");
-	h2Peak->GetXaxis()->SetTitle("x");
-	h2Peak->GetYaxis()->SetTitle("z");
+//	h2Peak->GetXaxis()->SetTitle("x");
+//	h2Peak->GetYaxis()->SetTitle("z");
 //	h2Widt->GetXaxis()->SetTitle("x");
 //	h2Widt->GetYaxis()->SetTitle("z");
 
 	h2Ener->SetOption("COLZ10TEXT");
 	h2Time->SetOption("COLZ10TEXT");
-	h2Peak->SetOption("COLZ10TEXT");
+//	h2Peak->SetOption("COLZ10TEXT");
 //	h2Widt->SetOption("COLZ10TEXT");
 
 	ssName.str("");
@@ -651,10 +698,11 @@ void PulseFinder::Save_2DHist(int trg, int evt)
 		std::cout << "hTime " << "max " << Utl->MaxV(vT);
 		std::cout << " min " << Utl->MinV(vT) << std::endl;
 	}
-	double bw = fBW;
-	h2Time->GetZaxis()->SetRangeUser(Utl->MinV(vT)-10*bw, Utl->MaxV(vT)+10*bw);
+//	h2Time->GetZaxis()->SetRangeUser(Utl->MinV(vT), Utl->MaxV(vT));
+	h2Time->GetZaxis()->SetRangeUser(vEvtPos.at(evt), vEvtPos.at(evt)+Utl->GetThrSignal());
 	h2Time->Write(ssName.str().c_str());
 
+	/*
 	ssName.str("");
 	ssName.clear();
 	ssName << h2Peak->GetName();
@@ -678,6 +726,7 @@ void PulseFinder::Save_2DHist(int trg, int evt)
 //	}	
 //	h2Widt->GetZaxis()->SetRangeUser(Utl->MinV(vW), Utl->MaxV(vW));
 //	h2Widt->Write(ssName.str().c_str());
+//	*/
 }
 
 void PulseFinder::Save_GRHist(int trg, int ID, int evt)
@@ -704,8 +753,8 @@ void PulseFinder::Print_Dat()
 {
 	EventReco ER_M(gMean);
 	ER_M.LoadParam();
-//	Utl->fout
-	Utl->fout << "Mean graph:\n";
+	Utl->fout << "Number of graphs is " << mc << std::endl;
+	Utl->fout << "\nMean graphs are " << cM << ":\n";
 	Utl->fout << "Baseline \t" << ER_M.GetBaseLine() << std::endl;
 	Utl->fout << "Peak     \t" << ER_M.GetPeak() << std::endl;
 	Utl->fout << "Peak time\t" << fBW*ER_M.GettPeak() << std::endl;
@@ -718,7 +767,7 @@ void PulseFinder::Print_Dat()
 
 	EventReco ER_I(giTOF);
 	ER_I.LoadParam();
-	Utl->fout << "\nIn coincidence graph:\n";
+	Utl->fout << "\nIn coincidence are " << cI << ":\n";
 	Utl->fout << "Baseline \t" << ER_I.GetBaseLine() << std::endl;
 	Utl->fout << "Peak     \t" << ER_I.GetPeak() << std::endl;
 	Utl->fout << "Peak time\t" << fBW*ER_I.GettPeak() << std::endl;
@@ -731,7 +780,7 @@ void PulseFinder::Print_Dat()
 
 	EventReco ER_O(goTOF);
 	ER_O.LoadParam();
-	Utl->fout << "\nOut coincidence graph:\n";
+	Utl->fout << "\nOut coincidence are " << cO << ":\n";
 	Utl->fout << "Baseline \t" << ER_O.GetBaseLine() << std::endl;
 	Utl->fout << "Peak     \t" << ER_O.GetPeak() << std::endl;
 	Utl->fout << "Peak time\t" << fBW*ER_O.GettPeak() << std::endl;
@@ -747,8 +796,8 @@ void PulseFinder::ResetHist()
 {
 	hPulse->Reset();
 	hPtrig->Reset();
-//	h2Ener->Reset();
-//	h2Time->Reset();
+	h2Ener->Reset();
+	h2Time->Reset();
 //	h2Peak->Reset();
 //	h2Widt->Reset();
 }

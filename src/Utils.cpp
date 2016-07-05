@@ -118,8 +118,10 @@ bool Utils::OpenOuts(std::string fname)
 		}
 		else
 		{
-//			OutFile->mkdir("2D");
-			OutFile->mkdir("GR");
+			if (GetPrintEvent())
+				OutFile->mkdir("2D");
+			if (GetPrintGraph())
+				OutFile->mkdir("GR");
 			return true;
 		}
 	}
@@ -250,6 +252,7 @@ void Utils::SetConfig(std::string cfn)
 			if (var == "binwidth") SetBinWidth(val);
 			if (var == "buffer") SetBuffer(val);
 			if (var == "printgraph") SetPrintGraph(val);
+			if (var == "printevent") SetPrintEvent(val);
 			if (var == "percent") SetPercent(val);
 			if (var == "eventlength") SetEvtLength(val);
 			if (var == "lowbound") SetLowB(val);
@@ -259,6 +262,8 @@ void Utils::SetConfig(std::string cfn)
 	std::cout << "Verbosity is " << GetVerbosity() << std::endl;
 	if (GetPrintGraph())
 		std::cout << "A individual pulse graph will be printed out of every " << GetPrintGraph() << std::endl;
+	if (GetPrintEvent() < 12345)
+		std::cout << "2D plots will be printed for full events (more than PMT > " << GetPrintEvent() << ")\n";
 	if (GetDebug())
 		std::cout << "Debugging mode on\nWARNING: plots will be overwritten" << std::endl;
 	else std::cout << "Debugging mode off\nNew plots will be created" << std::endl;
@@ -320,6 +325,12 @@ void Utils::SetBuffer(int emp)
 void Utils::SetPrintGraph(int emp)
 {
 	iGraph = emp;
+}
+
+void Utils::SetPrintEvent(int emp)
+{
+	if (emp < GetThrEvent()) iEvent = 12345;
+	else iEvent = emp;
 }
 
 void Utils::SetPercent(double emp)
@@ -401,6 +412,11 @@ int Utils::GetBuffer()
 int Utils::GetPrintGraph()
 {
 	return iGraph;
+}
+
+int Utils::GetPrintEvent()
+{
+	return iEvent;
 }
 
 double Utils::GetPercent()
