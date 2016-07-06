@@ -30,6 +30,6 @@ buffer 40000
 printgraph 0
 printevent 0
 percent 20
-eventlength 125
+eventlength 100
 lowbound -1
 upboud 1

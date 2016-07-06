@@ -79,10 +79,11 @@ int main(int argc, char **argv)
 	TH1F *tEnergy = new TH1F("tenergy", "Energy", 500, -0.005, 0.095);
 	TH1F *tTOF = new TH1F("ttof", "Time of flight", nbins, -xrange, xrange);
 	TH1F *tNext = new TH1F("tnext", "Time of flight", nbins, 0, xrange);
-	TH1I *tCard21 = new TH1I("tcard21", "Card 21 on event", 4, 0, 4);
+//	TH1I *tCard21 = new TH1I("tcard21", "Card 21 on event", 4, 0, 4);
 
 	TH2F *t2Dark = new TH2F("t2dark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
 	TH2F *t2EvRa = new TH2F("t2evra", "event rate per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	TH2F *t2EtDR = new TH2F("t2etdr", "event to noise ratio", 8, -0.5, 7.5, 8, -0.5, 7.5);
 
 	TGraph *tMean = new TGraph(Utl->GetEvtLength());
 	TGraph *tiTOF = new TGraph(Utl->GetEvtLength());
@@ -103,16 +104,18 @@ int main(int argc, char **argv)
 	TH1F *hEnergy;
 	TH1F *hTOF;
 	TH1F *hNext;
-	TH1I *hCard21;
+//	TH1I *hCard21;
 	TH2F *h2Dark;
 	TH2F *h2EvRa;
+	TH2F *h2EtDR;
 	TGraph *gMean;
 	TGraph *giTOF;
 	TGraph *goTOF;
 	TTree *tTree;
 
 	TDirectory * dir;
-	TChain *tDaisy = new TChain("tEvent");
+	TChain *tDaisE = new TChain("tEvent");
+	TChain *tDaisN = new TChain("tNoise");
 
 	for (int v = 0; v < RF_In.size(); v++)
 	{
@@ -128,7 +131,12 @@ int main(int argc, char **argv)
 //		dir = (TDirectory*) Utl->InFile->Get("");
 //		dir->GetObject("tevent", tevent);
 //		tTree = (TTree*) Utl->InFile->Get("tevent");
-		tDaisy->Add(Utl->InFile->GetName());
+		std::string TreeName = std::string(Utl->InFile->GetName()) + "/tEvent";
+		std::cout << "TreeName " << TreeName << std::endl;
+		tDaisE->Add(TreeName.c_str());
+		TreeName = std::string(Utl->InFile->GetName()) + "/tNoise";
+		std::cout << "TreeName " << TreeName << std::endl;
+		tDaisN->Add(TreeName.c_str());
 
 		hBaseLine = (TH1F*) Utl->InFile->Get("hbaseline");
 		hPeak = (TH1F*) Utl->InFile->Get("hpeak");
@@ -139,7 +147,7 @@ int main(int argc, char **argv)
 		hEnergy = (TH1F*) Utl->InFile->Get("henergy");
 		hTOF = (TH1F*) Utl->InFile->Get("htof");
 		hNext = (TH1F*) Utl->InFile->Get("hnext");
-		hCard21 = (TH1I*) Utl->InFile->Get("hcard21");
+//		hCard21 = (TH1I*) Utl->InFile->Get("hcard21");
 		hPfile = (TH1F*) Utl->InFile->Get("hpfile");
 		hEvent = (TH1F*) Utl->InFile->Get("hevent");
 		hEvenT = (TH1F*) Utl->InFile->Get("hevenT");
@@ -147,6 +155,7 @@ int main(int argc, char **argv)
 		hBinWd = (TH1F*) Utl->InFile->Get("hbinwd");
 		h2Dark = (TH2F*) Utl->InFile->Get("h2dark");
 		h2EvRa = (TH2F*) Utl->InFile->Get("h2evra");
+		h2EtDR = (TH2F*) Utl->InFile->Get("h2etdr");
 
 		gMean = (TGraph*) Utl->InFile->Get("gmean");
 		giTOF = (TGraph*) Utl->InFile->Get("gitof");
@@ -184,9 +193,20 @@ int main(int argc, char **argv)
 		tEnergy->Add(hEnergy, scale);
 		tTOF->Add(hTOF, scale);
 		tNext->Add(hNext, scale);
-		tCard21->Add(hCard21, scale);
+//		tCard21->Add(hCard21, scale);
 		t2Dark->Add(h2Dark, 1.0/RF_In.size());
 		t2EvRa->Add(h2EvRa, 1.0/RF_In.size());
+		t2EtDR->Add(h2EtDR, 1.0/RF_In.size());
+	}
+
+	Coord Pos;
+	double dD, dE;
+	for (int ID = 1; ID < 61; ID++)
+	{
+		Pos = Utl->Mapper(ID);
+		dD = t2Dark->GetBinContent(Pos.x+1, Pos.z+1);
+		dE = t2EvRa->GetBinContent(Pos.x+1, Pos.z+1);
+		t2EtDR->SetBinContent(Pos.x+1, Pos.z+1, dE/dD);
 	}
 
 //Write
@@ -209,8 +229,9 @@ int main(int argc, char **argv)
 	t2EvRa->SetStats(kFALSE);
 	t2EvRa->SetContour(40);
 	t2EvRa->SetOption("COLZ10TEXT");
-
-
+	t2EtDR->SetStats(kFALSE);
+	t2EtDR->SetContour(40);
+	t2EtDR->SetOption("COLZ10TEXT");
 
 	tPfile->GetXaxis()->SetTitle("time");
 	tEvent->GetXaxis()->SetTitle("pmt fired");
@@ -221,6 +242,8 @@ int main(int argc, char **argv)
 	t2Dark->GetYaxis()->SetTitle("z");
 	t2EvRa->GetXaxis()->SetTitle("x");
 	t2EvRa->GetYaxis()->SetTitle("z");
+	t2EtDR->GetXaxis()->SetTitle("x");
+	t2EtDR->GetYaxis()->SetTitle("z");
 	tMean->GetXaxis()->SetTitle("time");
 	tiTOF->GetXaxis()->SetTitle("time");
 	toTOF->GetXaxis()->SetTitle("time");
@@ -243,7 +266,7 @@ int main(int argc, char **argv)
 	tEnergy->Write();
 	tTOF->Write();
 	tNext->Write();
-	tCard21->Write();
+//	tCard21->Write();
 
 	tPfile->Write();
 	tEvent->Write();
@@ -252,11 +275,17 @@ int main(int argc, char **argv)
 	tBinWd->Write();
 	t2Dark->Write();
 	t2EvRa->Write();
+	t2EtDR->Write();
 	tMean->Write("tMean");
 	tiTOF->Write("tiTOF");
 	toTOF->Write("toTOF");
 
-	tDaisy->Merge(outF, 1000);
+	std::cout << "s0\n";
+	outF->cd();
+	tDaisE->Merge(outF, 1111, "keep");
+	std::cout << "s1\n";
+	tDaisN->Merge(outF, 1111);
+	std::cout << "s2\n";
 
 //	outF->Close();
 	Utl->InFile->Close();

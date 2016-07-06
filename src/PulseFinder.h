@@ -46,10 +46,10 @@ class PulseFinder
 		void FindPulses(int ent);
 		void FindEvents(int trg);
 		void LoopEvents(int trg);
-		void Fill1DHist(EventReco *ER);
+		void Fill1DHist(TTree *tree, EventReco *ER);
 		void Fill2DHist(int ID, Analysis Par);
 		void FillRateHist();
-		void GraphAVG(TGraph *g, int &cc);
+		void GraphAVG(TGraph *g, unsigned int &cc);
 		void NewHist();
 		void Save_Hist();
 		void Save_2DHist(int trg, int evt);
@@ -69,7 +69,7 @@ class PulseFinder
 		int iVerb;			//Verbosity level
 		double fBW;			//BinWidth
 		int RWM;			//RWM bin
-		int mc, cM, cI, cO, GC;		//Counters
+		unsigned int mc, cN, cM, cI, cO, GC;		//Counters
 
 
 		std::stringstream ssName;	//Histogram name
@@ -84,15 +84,17 @@ class PulseFinder
 		std::vector<double> vE, vT;
 		std::map<int, double> mDR, mER;		//DarkRate and EventRate pulses count
 		std::map<int, double> mLength;		//total time for rate count
+		double TimeLength;
+		std::map<int, std::map<int, Analysis> > mFill;
 
 		TH1I *hCard21;
 		TH1F *hPulse, *hPtrig, *hPfile, *hEvent, *hEvenT, *hEntry, *hBinWd;
 		TH1F *hBaseLine, *hPeak, *hValley, *hTime, *hWidth, *hCharge, *hEnergy, *hTOF, *hNext;
-		TH2F *h2Ener, *h2Time, *h2Peak, *h2Widt, *h2EvRa, *h2Dark;
+		TH2F *h2Ener, *h2Time, *h2Peak, *h2Widt, *h2EtDR, *h2EvRa, *h2Dark;
 
-		TGraph *gPulse, *gMean, *giTOF, *goTOF;
+		TGraph *gPulse, *gMean, *giTOF, *goTOF, *gNois;
 
-		TTree *tEvent;
+		TTree *tEvent, *tNoise;
 		float fBaseLine;
 		float fPeak;
 		float fValley;
