@@ -189,8 +189,13 @@ void EventReco::SetCharge()
 void EventReco::SetEnergy()
 {
 	double x, y, sum = 0;
+	int count;
 	for (int i = int(GettCFD()/fBW)-1; i < int((GettCFD()+GetZeroC())/fBW)+1; i++)
-		sum += Pulse[i-GettPeak()+NewP];
+	{
+		count = i-GettPeak()+NewP;
+		if (count < iEL)
+			sum += Pulse[count];
+	}
 	fEnergy = sum*fBW;
 }
 

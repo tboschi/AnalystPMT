@@ -840,6 +840,8 @@ void PulseFinder::Print_Dat()
 	Utl->fout << "Zero Cr  \t" << ER_N.GetZeroC() << std::endl;
 	Utl->fout << "Charge   \t" << ER_N.GetCharge() << std::endl;
 	Utl->fout << "Energy   \t" << ER_N.GetEnergy() << std::endl;
+
+	Utl->fout << "\n\nEvent rate is " << hEvent->GetEntries()*6.0e7/TimeLength << " Hz" << std::endl;
 }
 
 void PulseFinder::ResetHist()

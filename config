@@ -32,4 +32,4 @@ printevent 0
 percent 20
 eventlength 100
 lowbound -1
-upboud 1
+upbound 1
