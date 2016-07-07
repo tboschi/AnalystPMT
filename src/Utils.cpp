@@ -118,7 +118,7 @@ bool Utils::OpenOuts(std::string fname)
 		}
 		else
 		{
-			if (GetPrintEvent())
+			if (GetPrintEvent() < 12345)
 				OutFile->mkdir("2D");
 			if (GetPrintGraph())
 				OutFile->mkdir("GR");

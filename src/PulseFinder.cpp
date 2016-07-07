@@ -35,7 +35,7 @@ void PulseFinder::LoopTrg()
 
 	//Counters
 	mc = 0;
-	cM = 0, cI = 0, cO = 0, GC = 0;
+	cM = 0, cI = 0, cO = 0, cN = 0, GC = 0;
 	TimeLength = 0;
 
 	//Compute entries
@@ -409,6 +409,7 @@ void PulseFinder::Fill1DHist(TTree *tree, EventReco *ER)
 	fWidth = ER->GetZeroC();
 	fCharge = ER->GetCharge();
 	fEnergy = ER->GetEnergy();
+	fArea = ER->GetArea();
 	fTOF = ER->GetTOF();
 	fNext =(fTime - fTime_) >= 0 ? (fTime-fTime_) : -1;
 
@@ -420,6 +421,7 @@ void PulseFinder::Fill1DHist(TTree *tree, EventReco *ER)
 	hWidth->Fill(fWidth);
 	hCharge->Fill(fCharge);
 	hEnergy->Fill(fEnergy);
+	hArea->Fill(fArea);
 	hTOF->Fill(fTOF);
 	hNext->Fill(fNext);
 
@@ -461,6 +463,7 @@ void PulseFinder::NewHist()
 	hWidth = new TH1F("hwidth", "Pulse width", 500, -0.1, 0.9);
 	hCharge = new TH1F("hcharge", "Charge", 500, -0.005, 0.075);
 	hEnergy = new TH1F("henergy", "Energy", 500, -0.005, 0.095);
+	hArea = new TH1F("harea", "Area", 500, 0, 0.1);
 	hTOF = new TH1F("htof", "Time of flight", nbins, -xrange, xrange);
 	hNext = new TH1F("hnext", "Next pulse", nbins, 0, xrange);
 //	hCard21 = new TH1I("hcard21", "Card 21 on event", 4, 0, 4);
@@ -492,6 +495,7 @@ void PulseFinder::NewHist()
 	tEvent->Branch("Width", &fWidth, "fWidth/F");
 	tEvent->Branch("Charge", &fCharge, "fCharge/F");
 	tEvent->Branch("Energy", &fEnergy, "fEnergy/F");
+	tEvent->Branch("Area", &fArea, "fArea/F");
 	tEvent->Branch("TOF", &fTOF, "fTOF/F");
 	tEvent->Branch("Next", &fNext, "fNext/F");
 	tEvent->Branch("VETO", &bVETO, "bVETO/O");
@@ -507,6 +511,7 @@ void PulseFinder::NewHist()
 	tNoise->Branch("Width", &fWidth, "fWidth/F");
 	tNoise->Branch("Charge", &fCharge, "fCharge/F");
 	tNoise->Branch("Energy", &fEnergy, "fEnergy/F");
+	tNoise->Branch("Area", &fArea, "fArea/F");
 	tNoise->Branch("TOF", &fTOF, "fTOF/F");
 	tNoise->Branch("Next", &fNext, "fNext/F");
 	tNoise->Branch("VETO", &bVETO, "bVETO/O");
@@ -524,7 +529,6 @@ void PulseFinder::FillRateHist()
 		std::cout << "mDR size " << mDR.size() << std::endl;
 		std::cout << "mER size " << mER.size() << std::endl;
 	}
-	std::cout << "timelength " << TimeLength << std::endl;	
 
 //	std::map<int, double>::const_iterator imP;
 	for (int ID = 1; ID < 61; ++ID)
@@ -626,6 +630,7 @@ void PulseFinder::Save_Hist()
 	hWidth->Write();
 	hCharge->Write();
 	hEnergy->Write();
+	hArea->Write();
 	hTOF->Write();
 	hNext->Write();
 //	hCard21->Write();
@@ -883,6 +888,7 @@ void PulseFinder::CleanAll()
 	hWidth->Delete();
 	hCharge->Delete();
 	hEnergy->Delete();
+	hArea->Delete();
 	hTOF->Delete();
 	hNext->Delete();
 //	hCard21->Delete();

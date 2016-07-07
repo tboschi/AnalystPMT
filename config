@@ -27,7 +27,7 @@ shapingtime 100
 sample 4
 binwidth 0.002
 buffer 40000
-printgraph 0
+printgraph 100
 printevent 0
 percent 20
 eventlength 100

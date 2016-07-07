@@ -76,7 +76,8 @@ int main(int argc, char **argv)
 	TH1F *tTime = new TH1F("ttime", "Time", nbins, 0, xrange);
 	TH1F *tWidth = new TH1F("twidth", "Pulse width", 500, -0.1, 0.9);
 	TH1F *tCharge = new TH1F("tcharge", "Charge", 500, -0.005, 0.075);
-	TH1F *tEnergy = new TH1F("tenergy", "Energy", 500, -0.005, 0.095);
+	TH1F *tEnergy = new TH1F("tarea", "Energy", 500, -0.005, 0.095);
+	TH1F *tArea = new TH1F("tenergy", "Area", 500, 0, 0.1);
 	TH1F *tTOF = new TH1F("ttof", "Time of flight", nbins, -xrange, xrange);
 	TH1F *tNext = new TH1F("tnext", "Time of flight", nbins, 0, xrange);
 //	TH1I *tCard21 = new TH1I("tcard21", "Card 21 on event", 4, 0, 4);
@@ -88,6 +89,7 @@ int main(int argc, char **argv)
 	TGraph *tMean = new TGraph(Utl->GetEvtLength());
 	TGraph *tiTOF = new TGraph(Utl->GetEvtLength());
 	TGraph *toTOF = new TGraph(Utl->GetEvtLength());
+	TGraph *tNois = new TGraph(Utl->GetEvtLength());
 
 	//Old objects to catch
 	TH1F *hPfile;
@@ -102,6 +104,7 @@ int main(int argc, char **argv)
 	TH1F *hWidth;
 	TH1F *hCharge;
 	TH1F *hEnergy;
+	TH1F *hArea;
 	TH1F *hTOF;
 	TH1F *hNext;
 //	TH1I *hCard21;
@@ -111,9 +114,8 @@ int main(int argc, char **argv)
 	TGraph *gMean;
 	TGraph *giTOF;
 	TGraph *goTOF;
-	TTree *tTree;
+	TGraph *gNois;
 
-	TDirectory * dir;
 	TChain *tDaisE = new TChain("tEvent");
 	TChain *tDaisN = new TChain("tNoise");
 
@@ -122,20 +124,9 @@ int main(int argc, char **argv)
 		Utl->OpenIns(RF_In.at(v));
 		std::cout << "Opening " << Utl->InFile->GetName() << std::endl;
 
-//Copy objects
-
-//		dir = (TDirectory*) rootF->Get("Event");
-//		dir->GetObject("nevent", nevent);
-//		TList *tlist;
-
-//		dir = (TDirectory*) Utl->InFile->Get("");
-//		dir->GetObject("tevent", tevent);
-//		tTree = (TTree*) Utl->InFile->Get("tevent");
 		std::string TreeName = std::string(Utl->InFile->GetName()) + "/tEvent";
-		std::cout << "TreeName " << TreeName << std::endl;
 		tDaisE->Add(TreeName.c_str());
 		TreeName = std::string(Utl->InFile->GetName()) + "/tNoise";
-		std::cout << "TreeName " << TreeName << std::endl;
 		tDaisN->Add(TreeName.c_str());
 
 		hBaseLine = (TH1F*) Utl->InFile->Get("hbaseline");
@@ -145,6 +136,7 @@ int main(int argc, char **argv)
 		hWidth = (TH1F*) Utl->InFile->Get("hwidth");
 		hCharge = (TH1F*) Utl->InFile->Get("hcharge");
 		hEnergy = (TH1F*) Utl->InFile->Get("henergy");
+		hArea = (TH1F*) Utl->InFile->Get("harea");
 		hTOF = (TH1F*) Utl->InFile->Get("htof");
 		hNext = (TH1F*) Utl->InFile->Get("hnext");
 //		hCard21 = (TH1I*) Utl->InFile->Get("hcard21");
@@ -160,6 +152,7 @@ int main(int argc, char **argv)
 		gMean = (TGraph*) Utl->InFile->Get("gmean");
 		giTOF = (TGraph*) Utl->InFile->Get("gitof");
 		goTOF = (TGraph*) Utl->InFile->Get("gotof");
+		gNois = (TGraph*) Utl->InFile->Get("gnois");
 
 		double x, y, y0;
 		for (int i = 0; i < Utl->GetEvtLength(); i++)
@@ -175,6 +168,10 @@ int main(int argc, char **argv)
 			toTOF->GetPoint(i, x, y);
 			goTOF->GetPoint(i, x, y0);
 			toTOF->SetPoint(i, x, y+y0/RF_In.size());
+
+			tNois->GetPoint(i, x, y);
+			gNois->GetPoint(i, x, y0);
+			tNois->SetPoint(i, x, y+y0/RF_In.size());
 		}
 
 		double scale = 1.0;
@@ -191,6 +188,7 @@ int main(int argc, char **argv)
 		tWidth->Add(hWidth, scale);
 		tCharge->Add(hCharge, scale);
 		tEnergy->Add(hEnergy, scale);
+		tArea->Add(hArea, scale);
 		tTOF->Add(hTOF, scale);
 		tNext->Add(hNext, scale);
 //		tCard21->Add(hCard21, scale);
@@ -211,10 +209,6 @@ int main(int argc, char **argv)
 
 //Write
 
-
-	//Tree
-//	TTree *tTreeEvent = TTree::MergeTrees(tList);
-//	tTreeEvent->SetName("tEvent");
 
 	outF->cd();
 	//Histograms
@@ -247,13 +241,16 @@ int main(int argc, char **argv)
 	tMean->GetXaxis()->SetTitle("time");
 	tiTOF->GetXaxis()->SetTitle("time");
 	toTOF->GetXaxis()->SetTitle("time");
+	tNois->GetXaxis()->SetTitle("time");
 	tMean->GetYaxis()->SetTitle("amplitude");
 	tiTOF->GetYaxis()->SetTitle("amplitude");
 	toTOF->GetYaxis()->SetTitle("amplitude");
+	tNois->GetYaxis()->SetTitle("amplitude");
 
-	tMean->SetTitle("Average");
+	tMean->SetTitle("Average of signals");
 	tiTOF->SetTitle("In coincidence");
 	toTOF->SetTitle("Out coincidence");
+	tNois->SetTitle("Average of noise");
 
 //	tTreeEvent->Write();
 
@@ -264,6 +261,7 @@ int main(int argc, char **argv)
 	tWidth->Write();
 	tCharge->Write();
 	tEnergy->Write();
+	tArea->Write();
 	tTOF->Write();
 	tNext->Write();
 //	tCard21->Write();
@@ -279,6 +277,7 @@ int main(int argc, char **argv)
 	tMean->Write("tMean");
 	tiTOF->Write("tiTOF");
 	toTOF->Write("toTOF");
+	tNois->Write("tNois");
 
 	std::cout << "s0\n";
 	outF->cd();

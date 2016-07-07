@@ -46,6 +46,7 @@ class EventReco
 		void SetValley();		//Valley of pulse
 		void SetCharge();		//Charge, sum of bin around peak
 		void SetEnergy();		//Energy = integral from tcfd to zc
+		void SetArea();			//Energy = integral of the whole pulse
 		void SettCFD();			//Start of pulse
 		void SetZeroC();		//width of pulse = Zero Crossin
 		void SetTOF();			//time of flight = zeroc-tcfd
@@ -57,6 +58,7 @@ class EventReco
 		double GettP2V();
 		double GetCharge();
 		double GetEnergy();
+		double GetArea();
 		double GettCFD();
 		double GetZeroC();
 		double GetTOF();
@@ -81,6 +83,7 @@ class EventReco
 		double fValley;		//Minimum of graph
 		double fCharge;		//Sum of 5 points around peak
 		double fEnergy;		//Area between tCFD and end of pulse
+		double fArea;		//Integral of the whole pulse
 		double ftCFD;		//Real start of pulse
 		double fZeroC;		//Time between tCFD and end of pulse
 		double fTOF;		//Diff between tCFD and reference (RWM)

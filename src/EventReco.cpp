@@ -66,6 +66,7 @@ void EventReco::Init(int length)
 	fValley = 0;
 	fCharge = 0;
 	fEnergy = 0;
+	fArea = 0;
 	ftCFD = 0;
 	fZeroC = 0;
 	fTOF = 0;
@@ -109,6 +110,7 @@ void EventReco::LoadParam()
 	SetZeroC();
 	SetCharge();
 	SetEnergy();
+	SetArea();
 	SetTOF();
 
 	if (Utl->GetVerbosity() > 4) Print();
@@ -127,6 +129,7 @@ void EventReco::Print()
 	std::cout << "Time O F \t" << GetTOF() << std::endl;
 	std::cout << "Charge   \t" << GetCharge() << std::endl;
 	std::cout << "Energy   \t" << GetEnergy() << std::endl;
+	std::cout << "Area     \t" << GetArea() << std::endl;
 }
 
 void EventReco::SetBaseLine()		//Set to zero the avg of the first 20 points
@@ -189,6 +192,14 @@ void EventReco::SetEnergy()
 	for (int i = int(GettCFD()/fBW)-1; i < int((GettCFD()+GetZeroC())/fBW)+1; i++)
 		sum += Pulse[i-GettPeak()+NewP];
 	fEnergy = sum*fBW;
+}
+
+void EventReco::SetArea()
+{
+	double x, y, sum = 0;
+	for (int i = 0; i < iEL; i++)
+		sum += fabs(Pulse[i]);
+	fArea = sum*fBW;
 }
 
 void EventReco::SettCFD()
@@ -299,6 +310,11 @@ double EventReco::GetCharge()
 double EventReco::GetEnergy()
 {
 	return fEnergy;
+}
+
+double EventReco::GetArea()
+{
+	return fArea;
 }
 
 double EventReco::GettCFD()

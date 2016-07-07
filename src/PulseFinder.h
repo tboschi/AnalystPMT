@@ -89,7 +89,7 @@ class PulseFinder
 
 		TH1I *hCard21;
 		TH1F *hPulse, *hPtrig, *hPfile, *hEvent, *hEvenT, *hEntry, *hBinWd;
-		TH1F *hBaseLine, *hPeak, *hValley, *hTime, *hWidth, *hCharge, *hEnergy, *hTOF, *hNext;
+		TH1F *hBaseLine, *hPeak, *hValley, *hTime, *hWidth, *hCharge, *hEnergy, *hArea, *hTOF, *hNext;
 		TH2F *h2Ener, *h2Time, *h2Peak, *h2Widt, *h2EtDR, *h2EvRa, *h2Dark;
 
 		TGraph *gPulse, *gMean, *giTOF, *goTOF, *gNois;
@@ -103,6 +103,7 @@ class PulseFinder
 		float fWidth;
 		float fCharge;
 		float fEnergy;
+		float fArea;
 		float fTOF;
 		float fNext;
 		int iID;
