@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 
 	for (int v = 0; v < RF_In.size(); v++)
 	{
-		Utl->OpenIns(RF_In.at(v));
+		Utl->OpenIns(v, RF_In.at(v));
 		std::cout << "Opening " << Utl->InFile->GetName() << std::endl;
 
 		std::string TreeName = std::string(Utl->InFile->GetName()) + "/tEvent";

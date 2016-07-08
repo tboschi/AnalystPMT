@@ -37,6 +37,8 @@ class EventReco
 		void Init(int length);
 		TGraph *LoadGraph();
 		TGraph *LoadDeriv();
+		float* GetPulse();
+		void LoadPulse(float *ext);
 //		void FillN(TNtuple *nT);
 		void LoadParam();
 		void Print();

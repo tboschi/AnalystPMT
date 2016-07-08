@@ -62,7 +62,7 @@ class Utils
 		PMTData *GetPMT();
 
 		void SetDir(std::string dir);
-		bool OpenIns(std::string fname);
+		bool OpenIns(int i, std::string fname);
 		bool OpenOuts(std::string fname);
 		void SetConfig(std::string cfn);
 		void Close();
@@ -92,6 +92,7 @@ class Utils
 		double GetLowB();
 		double GetUpB();
 		unsigned int GetNumTrg();
+		int GetFileNum();
 
 		void SetDebug(bool emp);
 		void SetVerbosity(int emp);
@@ -158,7 +159,7 @@ class Utils
 		}
 
 		//Handler for in and out root file
-		TFile *InFile, *OutFile;
+		TFile *InFile, *OutFile, *OutGraph;
 		std::ofstream fout;
 
 	private:
@@ -211,6 +212,7 @@ class Utils
 		double fUpB;		//Upper bound for TOF
 
 		unsigned int iNumTrg;	//Num of triggers in file
+		int iFileNum;		//Num of file
 	
 		PMTData* PMT;
 

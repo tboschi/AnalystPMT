@@ -49,7 +49,7 @@ int main(int argc, char** argv)
 	for (int i = 0; i < RF_In.size(); i++)
 	{
 		
-		if (Handler->OpenIns(RF_In.at(i)))
+		if (Handler->OpenIns(i, RF_In.at(i)))
 			if (Handler->OpenOuts(RF_In.at(i)))
 				PulseFinder PF;
 //			{

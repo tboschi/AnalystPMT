@@ -93,6 +93,17 @@ TGraph *EventReco::LoadDeriv()
 	return gDeriv;
 }
 
+float *EventReco::GetPulse()
+{
+	return Pulse;
+}
+
+void EventReco::LoadPulse(float *ext)
+{
+	for (int i = 0; i < iEL; i++)
+		ext[i] = Pulse[i];
+}
+
 /*
 void EventReco::FillN(TNtuple *nT)
 {
@@ -132,16 +143,16 @@ void EventReco::Print()
 	std::cout << "Area     \t" << GetArea() << std::endl;
 }
 
-void EventReco::SetBaseLine()		//Set to zero the avg of the first 20 points
+void EventReco::SetBaseLine()		//Set to zero the avg of the first 10 points
 {
 	double sum = 0;
-	for (int i = 0; i < 20; i++)
+	for (int i = 0; i < 10; i++)
 		sum += Pulse[i];
 
 	fBaseLine = sum/20.0;
 
 	for (int i = 0; i < iEL; i++)
-		Pulse[i] -= GetBaseLine();
+		Pulse[i] -= fBaseLine;
 }
 
 void EventReco::SetPeak()

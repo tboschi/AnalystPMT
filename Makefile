@@ -13,13 +13,16 @@ CFLAG = -pthread -m64 -I/usr/include/root -L/usr/lib64/root -lCore -lCint -lRIO 
 IN = $(SRC)main.cpp
 OUT = Main
 
-all: clean cpinclude pulse merge
+all: pulse merge select
 
-pulse: clean cpinclude
+pulse: cpinclude
 	g++ $(IN) $(SRC)PMTData.C $(SRC)Utils.cpp $(SRC)EventReco.cpp $(SRC)PulseFinder.cpp -fPIC -I $(INC) $(CFLAG) -o $(OUT)
 
-merge: clean cpinclude
+merge: cpinclude
 	g++ $(SRC)PMTData.C $(SRC)Utils.cpp $(SRC)Merge.cpp -fPIC -I $(INC) $(CFLAG) -o Merge
+
+select: cpinclude
+	g++ $(SRC)Event.C $(SRC)Selection.cpp -fPIC -I $(INC) $(CFLAG) -o Select
 
 clean:
 	rm -f inc/*
@@ -27,7 +30,7 @@ clean:
 
 cpinclude:
 	cp $(SRC)PMTData.h inc/
-	cp $(SRC)PMTDataOld.h inc/
+	cp $(SRC)Event.h inc/
 	cp $(SRC)Utils.h inc/
 	cp $(SRC)PulseFinder.h inc/
 	cp $(SRC)EventReco.h inc/

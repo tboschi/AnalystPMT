@@ -6,6 +6,7 @@ PulseFinder::PulseFinder()
 	Utl = Utl->GetUtils();
 
 	iVerb = Utl->GetVerbosity();
+	iEL = Utl->GetEvtLength();
 	fBW = Utl->GetBinWidth();
 		
 	PMT = Utl->GetPMT();
@@ -269,10 +270,12 @@ void PulseFinder::LoopEvents(int trg)
 	std::vector<EventReco*>::iterator iE;
 	Analysis aEvt;
 	int tCC;
-	int &ID = iID;
+	int &ID = iPMT;
+	iTRG = trg;
 
 	vE.clear();
 	vT.clear();
+	std::fill(fPulse, fPulse+500, 0);
 
 	if (iVerb > 2)
 		std::cout << "Map size " << mPulseER.size() << std::endl;
@@ -293,6 +296,7 @@ void PulseFinder::LoopEvents(int trg)
 		iE = mPulseER[ID].begin();	//Loop over pulseER
 		for ( ; iE != mPulseER[ID].end(); ++iE, ++GC)	//Loop on pulses
 		{
+			iID = GC;
 			ER = *(iE);		//Get pointer from EventReco
 			ER->LoadParam();
 
@@ -331,12 +335,14 @@ void PulseFinder::LoopEvents(int trg)
 			}
 
 			//Load pulse to graph and average
-			gPulse = ER->LoadGraph();
-			GraphAVG(gMean, cM);
+//			GraphAVG(gMean, cM);
 
 			//Prints a graph every PrintGraph
-			if (Utl->GetPrintGraph() > 0 ? (GC % Utl->GetPrintGraph() == 0) : 0)
-				Save_GRHist(trg, ID, iE - mPulseER[ID].begin());
+//			if (Utl->GetPrintGraph())
+//			{
+//				gPulse = ER->LoadGraph();
+//				Save_GRHist(GC);
+//			}
 
 			//If no event, then all pulses are "noise" and average
 			if (vEvtPos.size() == 0)
@@ -344,7 +350,7 @@ void PulseFinder::LoopEvents(int trg)
 				++mDR[ID];
 				Fill1DHist(tNoise, ER);		//Fill tree and histos
 				fTime_ = fTime;			//fTime for fNext
-				GraphAVG(gNois, cN);
+//				GraphAVG(gNois, cN);
 			}
 			else for (int k = 0; k < vEvtPos.size(); ++k)	//If event, then pick the closest one only
 			{
@@ -353,7 +359,7 @@ void PulseFinder::LoopEvents(int trg)
 				{
 //					mLength[ID] -= Utl->GetThrSignal();	//Reduce time window
 					++mER[ID];
-					
+
 					//For 2D plot
 					if (vEvtBin.at(k) > Utl->GetPrintEvent())
 					{
@@ -370,20 +376,20 @@ void PulseFinder::LoopEvents(int trg)
 //					std::cout << ID << " time " << fTime << "\t" << fTime_ << std::endl;
 
 					//Average graph computed
-					if (ER->GetTOF() > Utl->GetLowB() && ER->GetTOF() < Utl->GetUpB())
-						GraphAVG(giTOF, cI);
-					else
-						GraphAVG(goTOF, cO);
+//					if (ER->GetTOF() > Utl->GetLowB() && ER->GetTOF() < Utl->GetUpB())
+//						GraphAVG(giTOF, cI);
+//					else
+//						GraphAVG(goTOF, cO);
 				}
 				else
 				{
 					++mDR[ID];
 					Fill1DHist(tNoise, ER);		//Fill tree and histos
 					fTime_ = fTime;			//fTime for fNext
-					GraphAVG(gNois, cN);
+//					GraphAVG(gNois, cN);
 				}
 			}
-		}	
+		}
 	}
 
 	for (int k = 0; k < vEvtPos.size(); ++k)	//If event, check if must be printed
@@ -411,7 +417,8 @@ void PulseFinder::Fill1DHist(TTree *tree, EventReco *ER)
 	fEnergy = ER->GetEnergy();
 	fArea = ER->GetArea();
 	fTOF = ER->GetTOF();
-	fNext =(fTime - fTime_) >= 0 ? (fTime-fTime_) : -1;
+	fNext = (fTime - fTime_) >= 0 ? (fTime - fTime_) : -1;
+	ER->LoadPulse(fPulse);
 
 	//for noises and signals
 	hBaseLine->Fill(fBaseLine);
@@ -488,6 +495,11 @@ void PulseFinder::NewHist()
 	//Tree
 	//
 	tEvent = new TTree("tEvent", "Event's pulses tree container");
+	tEvent->Branch("EvtLength", &iEL, "iEL/I");
+//	tEvent->Branch("File", &iFile, "iFile/I");
+//	tEvent->Branch("ID", &iID, "iID/I");
+	tEvent->Branch("TRG", &iTRG, "iTRG/I");
+	tEvent->Branch("PMTID", &iPMT, "iPMT/I");
 	tEvent->Branch("Baseline", &fBaseLine, "fBaseLine/F");
 	tEvent->Branch("Peak", &fPeak, "fPeak/F");
 	tEvent->Branch("P2V", &fValley, "fValley/F");
@@ -501,9 +513,14 @@ void PulseFinder::NewHist()
 	tEvent->Branch("VETO", &bVETO, "bVETO/O");
 	tEvent->Branch("MRD2", &bMRD2, "bMRD2/O");
 	tEvent->Branch("MRD3", &bMRD3, "bMRD3/O");
-	tEvent->Branch("PMTID", &iID, "iID/I");
+	tEvent->Branch("Pulse", fPulse, "fPulse[iEL]/F");
 
 	tNoise = new TTree("tNoise", "Noise's pulses tree container");
+	tNoise->Branch("EvtLength", &iEL, "iEL/I");
+//	tNoise->Branch("File", &iFile, "iFile/I");
+//	tNoise->Branch("ID", &iID, "iID/I");
+	tNoise->Branch("TRG", &iTRG, "iPMT/I");
+	tNoise->Branch("PMTID", &iPMT, "iPMT/I");
 	tNoise->Branch("Baseline", &fBaseLine, "fBaseLine/F");
 	tNoise->Branch("Peak", &fPeak, "fPeak/F");
 	tNoise->Branch("P2V", &fValley, "fValley/F");
@@ -517,7 +534,7 @@ void PulseFinder::NewHist()
 	tNoise->Branch("VETO", &bVETO, "bVETO/O");
 	tNoise->Branch("MRD2", &bMRD2, "bMRD2/O");
 	tNoise->Branch("MRD3", &bMRD3, "bMRD3/O");
-	tNoise->Branch("PMTID", &iID, "iID/I");
+	tNoise->Branch("Pulse", fPulse, "fPulse[iEL]/F");
 }
 
 void PulseFinder::FillRateHist()
@@ -765,22 +782,17 @@ void PulseFinder::Save_2DHist(int trg, int evt)
 //	*/
 }
 
-void PulseFinder::Save_GRHist(int trg, int ID, int evt)
+void PulseFinder::Save_GRHist(int ID)
 {
-	Utl->OutFile->cd("GR");
-
-	Coord Pos = Utl->Mapper(ID);
+	Utl->OutGraph->cd();
 
 	ssName.str("");
 	ssName.clear();
-	ssName << "pulse_" << trg;
-	ssName << "_x" << Pos.x;
-	ssName << "z" << Pos.z;
-	ssName << "_" << evt;
+	ssName << "pulse_" << ID;
 
 	gPulse->GetXaxis()->SetTitle("time");
-	gPulse->GetYaxis()->SetTitle("Data");
-	gPulse->SetTitle("Pulse");
+	gPulse->GetYaxis()->SetTitle("voltage");
+	gPulse->SetTitle(ssName.str().c_str());
 
 	gPulse->Write(ssName.str().c_str());
 }
