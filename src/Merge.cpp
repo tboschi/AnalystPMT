@@ -76,8 +76,8 @@ int main(int argc, char **argv)
 	TH1F *tTime = new TH1F("ttime", "Time", nbins, 0, xrange);
 	TH1F *tWidth = new TH1F("twidth", "Pulse width", 500, -0.1, 0.9);
 	TH1F *tCharge = new TH1F("tcharge", "Charge", 500, -0.005, 0.075);
-	TH1F *tEnergy = new TH1F("tarea", "Energy", 500, -0.005, 0.095);
-	TH1F *tArea = new TH1F("tenergy", "Area", 500, 0, 0.1);
+	TH1F *tEnergy = new TH1F("tenergy", "Energy", 500, -0.005, 0.095);
+	TH1F *tArea = new TH1F("tarea", "Area", 500, 0, 0.1);
 	TH1F *tTOF = new TH1F("ttof", "Time of flight", nbins, -xrange, xrange);
 	TH1F *tNext = new TH1F("tnext", "Time of flight", nbins, 0, xrange);
 //	TH1I *tCard21 = new TH1I("tcard21", "Card 21 on event", 4, 0, 4);
