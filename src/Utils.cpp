@@ -81,8 +81,9 @@ double Utils::CI(float *data, int x2, double fmax, double tau)
 }
 
 //Files handler
-bool Utils::OpenIns(std::string fname)
+bool Utils::OpenIns(int i, std::string fname)
 {
+	iFileNum = i;
 	InFile = new TFile(fname.c_str(), "READ");		//open file -> should be a loop on vector
 	if (InFile->IsZombie()) 
 	{
@@ -120,8 +121,7 @@ bool Utils::OpenOuts(std::string fname)
 		{
 			if (GetPrintEvent() < 12345)
 				OutFile->mkdir("2D");
-			if (GetPrintGraph())
-				OutFile->mkdir("GR");
+
 			return true;
 		}
 	}
@@ -130,7 +130,6 @@ bool Utils::OpenOuts(std::string fname)
 		std::cout << "File already analysed. Skipping...\n\n";
 		return false;
 	}
-
 }
 
 void Utils::GetTree()
@@ -261,7 +260,7 @@ void Utils::SetConfig(std::string cfn)
 	}
 	std::cout << "Verbosity is " << GetVerbosity() << std::endl;
 	if (GetPrintGraph())
-		std::cout << "A individual pulse graph will be printed out of every " << GetPrintGraph() << std::endl;
+		std::cout << "A individual pulse graph will be printed out\n";
 	if (GetPrintEvent() < 12345)
 		std::cout << "2D plots will be printed for full events (more than PMT > " << GetPrintEvent() << ")\n";
 	if (GetDebug())
@@ -442,6 +441,11 @@ double Utils::GetUpB()
 unsigned int Utils::GetNumTrg()
 {
 	return iNumTrg;
+}
+
+int Utils::GetFileNum()
+{
+	return iFileNum;
 }
 
 PMTData *Utils::GetPMT()

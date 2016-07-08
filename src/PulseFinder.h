@@ -53,7 +53,7 @@ class PulseFinder
 		void NewHist();
 		void Save_Hist();
 		void Save_2DHist(int trg, int evt);
-		void Save_GRHist(int trg, int ID, int evt);
+		void Save_GRHist(int ID);
 		void Print_Dat();
 		void ResetHist();
 		void CleanAll();
@@ -68,6 +68,7 @@ class PulseFinder
 
 		int iVerb;			//Verbosity level
 		double fBW;			//BinWidth
+		int iEL;
 		int RWM;			//RWM bin
 		unsigned int mc, cN, cM, cI, cO, GC;		//Counters
 
@@ -106,10 +107,14 @@ class PulseFinder
 		float fArea;
 		float fTOF;
 		float fNext;
-		int iID;
+		float fPulse[500];
+		int iFile;
+		int iPMT;
+		int iTRG;
 		bool bVETO;
 		bool bMRD2;
 		bool bMRD3;
+		int iID;
 };
 
 #endif
