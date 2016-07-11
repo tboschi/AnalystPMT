@@ -5,7 +5,7 @@
 #include <sstream>
 #include <vector>
 
-#include "PMTData.h"
+//#include "PMTData.h"
 #include "Utils.h"
 
 #include "TH1.h"
@@ -29,8 +29,9 @@ int main(int argc, char **argv)
 	ssL.str("");
 	ssL.clear();
 	ssL << "find ";
-	ssL << fold;
-       	ssL << " -name \"r*root\" > rootfiles.list";
+	for (int i = 1; i < argc; i++)
+		ssL << fold << " ";
+       	ssL << "-name \"r*root\" > rootfiles.list";
 	std::cout << ssL.str() << std::endl;
 	system(ssL.str().c_str());
 
@@ -279,12 +280,9 @@ int main(int argc, char **argv)
 	toTOF->Write("toTOF");
 	tNois->Write("tNois");
 
-	std::cout << "s0\n";
 	outF->cd();
 	tDaisE->Merge(outF, 1111, "keep");
-	std::cout << "s1\n";
 	tDaisN->Merge(outF, 1111);
-	std::cout << "s2\n";
 
 //	outF->Close();
 	Utl->InFile->Close();
