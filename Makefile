@@ -1,5 +1,6 @@
 SRC = src/
 INC = inc/
+PMT = PMTData		#Newer data
 ROOTDIR = ../ANNIEDAQ/ToolDaq/root/
 ROOTFLAG := $(shell root-config --cflags)
 ROOTLIBS := $(shell root-config --glibs)
@@ -16,10 +17,10 @@ OUT = Main
 all: pulse merge select
 
 pulse: cpinclude
-	g++ $(IN) $(SRC)PMTData.C $(SRC)Utils.cpp $(SRC)EventReco.cpp $(SRC)PulseFinder.cpp -fPIC -I $(INC) $(CFLAG) -o $(OUT)
+	g++ $(IN) $(SRC)$(PMT).C $(SRC)Utils.cpp $(SRC)EventReco.cpp $(SRC)PulseFinder.cpp -fPIC -I $(INC) $(CFLAG) -o $(OUT)
 
 merge: cpinclude
-	g++ $(SRC)PMTData.C $(SRC)Utils.cpp $(SRC)Merge.cpp -fPIC -I $(INC) $(CFLAG) -o Merge
+	g++ $(SRC)$(PMT).C $(SRC)Utils.cpp $(SRC)Merge.cpp -fPIC -I $(INC) $(CFLAG) -o Merge
 
 select: cpinclude
 	g++ $(SRC)Event.C $(SRC)Selection.cpp -fPIC -I $(INC) $(CFLAG) -o Select
@@ -29,7 +30,7 @@ clean:
 	rm -f lib/*
 
 cpinclude:
-	cp $(SRC)PMTData.h inc/
+	cp $(SRC)$(PMT).h inc/
 	cp $(SRC)Event.h inc/
 	cp $(SRC)Utils.h inc/
 	cp $(SRC)PulseFinder.h inc/
