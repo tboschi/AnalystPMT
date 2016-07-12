@@ -1,6 +1,6 @@
 SRC = src/
 INC = inc/
-PMT = PMTData		#Newer data
+PMT = PMTData
 ROOTDIR = ../ANNIEDAQ/ToolDaq/root/
 ROOTFLAG := $(shell root-config --cflags)
 ROOTLIBS := $(shell root-config --glibs)
@@ -21,6 +21,9 @@ pulse: cpinclude
 
 merge: cpinclude
 	g++ $(SRC)$(PMT).C $(SRC)Utils.cpp $(SRC)Merge.cpp -fPIC -I $(INC) $(CFLAG) -o Merge
+
+merge: cpinclude
+	g++ $(SRC)$(PMT).C $(SRC)Utils.cpp $(SRC)SuperMerge.cpp -fPIC -I $(INC) $(CFLAG) -o SuperMerge
 
 select: cpinclude
 	g++ $(SRC)Event.C $(SRC)Selection.cpp -fPIC -I $(INC) $(CFLAG) -o Select
