@@ -292,6 +292,7 @@ void PulseFinder::LoopEvents(int trg)
 		mc += mPulseER[ID].size();		//Count graphs in events
 		TimeLength += fBW*Utl->GetBuffer();	//Add time
 
+	
 		//This loop on all pulses found
 		iE = mPulseER[ID].begin();	//Loop over pulseER
 		for ( ; iE != mPulseER[ID].end(); ++iE, ++GC)	//Loop on pulses
@@ -334,10 +335,13 @@ void PulseFinder::LoopEvents(int trg)
 //				else hCard21->Fill(3);
 			}
 
+//			gPulse = ER->LoadGraph();		// To be remove asap
 			//Load pulse to graph and average
 //			GraphAVG(gMean, cM);
 
 			//Prints a graph every PrintGraph
+			//
+
 //			if (Utl->GetPrintGraph())
 //			{
 //				gPulse = ER->LoadGraph();
@@ -487,10 +491,10 @@ void PulseFinder::NewHist()
 
 	//Graph
 	//
-	gMean = new TGraph(Utl->GetEvtLength());
-	giTOF = new TGraph(Utl->GetEvtLength());
-	goTOF = new TGraph(Utl->GetEvtLength());
-	gNois = new TGraph(Utl->GetEvtLength());
+//	gMean = new TGraph(Utl->GetEvtLength());
+//	giTOF = new TGraph(Utl->GetEvtLength());
+//	goTOF = new TGraph(Utl->GetEvtLength());
+//	gNois = new TGraph(Utl->GetEvtLength());
 
 	//Tree
 	//
@@ -623,19 +627,19 @@ void PulseFinder::Save_Hist()
 	h2EtDR->GetXaxis()->SetTitle("x");
 	h2EtDR->GetYaxis()->SetTitle("z");
 
-	gMean->GetXaxis()->SetTitle("time");
-	giTOF->GetXaxis()->SetTitle("time");
-	goTOF->GetXaxis()->SetTitle("time");
-	gNois->GetXaxis()->SetTitle("time");
-	gMean->GetYaxis()->SetTitle("amplitude");
-	giTOF->GetYaxis()->SetTitle("amplitude");
-	goTOF->GetYaxis()->SetTitle("amplitude");
-	gNois->GetYaxis()->SetTitle("amplitude");
+//	gMean->GetXaxis()->SetTitle("time");
+//	giTOF->GetXaxis()->SetTitle("time");
+//	goTOF->GetXaxis()->SetTitle("time");
+//	gNois->GetXaxis()->SetTitle("time");
+//	gMean->GetYaxis()->SetTitle("amplitude");
+//	giTOF->GetYaxis()->SetTitle("amplitude");
+//	goTOF->GetYaxis()->SetTitle("amplitude");
+//	gNois->GetYaxis()->SetTitle("amplitude");
 
-	gMean->SetTitle("Average of signals");
-	giTOF->SetTitle("In coincidence");
-	goTOF->SetTitle("Out coincidence");
-	gNois->SetTitle("Average of Noise");
+//	gMean->SetTitle("Average of signals");
+//	giTOF->SetTitle("In coincidence");
+//	goTOF->SetTitle("Out coincidence");
+//	gNois->SetTitle("Average of Noise");
 
 	tEvent->Write();
 	tNoise->Write();
@@ -660,10 +664,10 @@ void PulseFinder::Save_Hist()
 	h2Dark->Write();
 	h2EvRa->Write();
 	h2EtDR->Write();
-	gMean->Write("gmean");
-	giTOF->Write("gitof");
-	goTOF->Write("gotof");
-	gNois->Write("gnois");
+//	gMean->Write("gmean");
+//	giTOF->Write("gitof");
+//	goTOF->Write("gotof");
+//	gNois->Write("gnois");
 }
 
 void PulseFinder::Save_2DHist(int trg, int evt)
@@ -802,6 +806,7 @@ void PulseFinder::Print_Dat()
 	Utl->fout << "Number of graphs is " << mc << std::endl;
 
 	EventReco ER_M(gMean);
+	std::cout <<  "\n\n\n\nGMEAN\n\n";
 	ER_M.LoadParam();
 	Utl->fout << "\nMean graphs are " << cM << ":\n";
 	Utl->fout << "Baseline \t" << ER_M.GetBaseLine() << std::endl;
@@ -814,6 +819,15 @@ void PulseFinder::Print_Dat()
 	Utl->fout << "Charge   \t" << ER_M.GetCharge() << std::endl;
 	Utl->fout << "Energy   \t" << ER_M.GetEnergy() << std::endl;
 
+	double x, y;
+	for (int i = 0; i < gMean->GetN(); i++)
+	{
+		gMean->GetPoint(i, x, y);
+		Utl->fout << i << "\t" << x << "\t" << y << std::endl;
+	}
+
+
+	/*
 	EventReco ER_I(giTOF);
 	ER_I.LoadParam();
 	Utl->fout << "\nIn coincidence are " << cI << ":\n";
@@ -854,6 +868,7 @@ void PulseFinder::Print_Dat()
 	Utl->fout << "Energy   \t" << ER_N.GetEnergy() << std::endl;
 
 	Utl->fout << "\n\nEvent rate is " << hEvent->GetEntries()*6.0e7/TimeLength << " Hz" << std::endl;
+	*/
 }
 
 void PulseFinder::ResetHist()
@@ -915,7 +930,7 @@ void PulseFinder::CleanAll()
 	h2EvRa->Delete();
 	h2EtDR->Delete();
 
-	gMean->Delete();
-	giTOF->Delete();
-	goTOF->Delete();
+//	gMean->Delete();
+//	giTOF->Delete();
+//	goTOF->Delete();
 }
