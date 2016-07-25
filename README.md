@@ -37,8 +37,11 @@ make select
 ```
 
 |Main       | make pulse |
+|---------- |----------- |
 |Merge      | make merge |
+|---------- |----------- |
 |SuperMerge | make super |
+|---------- |----------- |
 |Select     | make select|
 
 Main requires 0 or 1 argument.
