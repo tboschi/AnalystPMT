@@ -1,12 +1,12 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Sun Jul 10 22:10:17 2016 by ROOT version 6.06/00
-// from TTree Event/Event's pulses tree container
-// found on file: test/result/rDataR145S0p1T3Jul__3.root
+// Thu Jun 30 14:00:34 2016 by ROOT version 6.06/00
+// from TTree PMTData/PMTData
+// found on file: data/R41S0/DataR41S0p1T0May_23_14:31.root
 //////////////////////////////////////////////////////////
 
-#ifndef Event_h
-#define Event_h
+#ifndef PMTData_h
+#define PMTData_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -14,7 +14,7 @@
 
 // Header file for the classes stored in the TTree if any.
 
-class Event {
+class PMTData {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
@@ -22,45 +22,37 @@ public :
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
    // Declaration of leaf types
-   Int_t           EvtLength;
-   Int_t           TRG;
+   Long64_t        Trigger;
+   Int_t           LastSync;
+   Int_t           SequenceID;
+   Int_t           StartTime;
+   Int_t           CardID;
+   Int_t           Channel;
    Int_t           PMTID;
-   Float_t         Baseline;
-   Float_t         Peak;
-   Float_t         P2V;
-   Float_t         Time;
-   Float_t         Width;
-   Float_t         Charge;
-   Float_t         Energy;
-   Float_t         Area;
-   Float_t         TOF;
-   Float_t         Next;
-   Bool_t          VETO;
-   Bool_t          MRD2;
-   Bool_t          MRD3;
-   Float_t         Pulse[100];   //[iEL]
+   Int_t           PMTf;
+   Int_t           PMTx;
+   Int_t           PMTy;
+   Int_t           PMTz;
+   Int_t           BufferSize;
+   Float_t         Data[40000];   //[BufferSize]
 
    // List of branches
-   TBranch        *b_iEL;   //!
-   TBranch        *b_iTRG;   //!
-   TBranch        *b_iPMT;   //!
-   TBranch        *b_fBaseLine;   //!
-   TBranch        *b_fPeak;   //!
-   TBranch        *b_fValley;   //!
-   TBranch        *b_fTime;   //!
-   TBranch        *b_fWidth;   //!
-   TBranch        *b_fCharge;   //!
-   TBranch        *b_fEnergy;   //!
-   TBranch        *b_fArea;   //!
-   TBranch        *b_fTOF;   //!
-   TBranch        *b_fNext;   //!
-   TBranch        *b_bVETO;   //!
-   TBranch        *b_bMRD2;   //!
-   TBranch        *b_bMRD3;   //!
-   TBranch        *b_Pulse;   //!
+   TBranch        *b_Trigger;   //!
+   TBranch        *b_LastSync;   //!
+   TBranch        *b_SequenceID;   //!
+   TBranch        *b_StartTime;   //!
+   TBranch        *b_CardID;   //!
+   TBranch        *b_Channel;   //!
+   TBranch        *b_PMTID;   //!
+   TBranch        *b_PMTf;   //!
+   TBranch        *b_PMTx;   //!
+   TBranch        *b_PMTy;   //!
+   TBranch        *b_PMTz;   //!
+   TBranch        *b_BufferSize;   //!
+   TBranch        *b_Data;   //!
 
-   Event(TTree *tree=0);
-   virtual ~Event();
+   PMTData(TTree *tree=0);
+   virtual ~PMTData();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
@@ -72,35 +64,35 @@ public :
 
 #endif
 
-#ifdef Event_cxx
-Event::Event(TTree *tree) : fChain(0) 
+#ifdef PMTData_cxx
+PMTData::PMTData(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("test/result/rDataR145S0p1T3Jul__3.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("data/R41S0/DataR41S0p1T0May_23_14:31.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("test/result/rDataR145S0p1T3Jul__3.root");
+         f = new TFile("data/R41S0/DataR41S0p1T0May_23_14:31.root");
       }
-      f->GetObject("Event",tree);
+      f->GetObject("PMTData",tree);
 
    }
    Init(tree);
 }
 
-Event::~Event()
+PMTData::~PMTData()
 {
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
 
-Int_t Event::GetEntry(Long64_t entry)
+Int_t PMTData::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t Event::LoadTree(Long64_t entry)
+Long64_t PMTData::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -113,7 +105,7 @@ Long64_t Event::LoadTree(Long64_t entry)
    return centry;
 }
 
-void Event::Init(TTree *tree)
+void PMTData::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -129,27 +121,23 @@ void Event::Init(TTree *tree)
    fCurrent = -1;
    fChain->SetMakeClass(1);
 
-   fChain->SetBranchAddress("EvtLength", &EvtLength, &b_iEL);
-   fChain->SetBranchAddress("TRG", &TRG, &b_iTRG);
-   fChain->SetBranchAddress("PMTID", &PMTID, &b_iPMT);
-   fChain->SetBranchAddress("Baseline", &Baseline, &b_fBaseLine);
-   fChain->SetBranchAddress("Peak", &Peak, &b_fPeak);
-   fChain->SetBranchAddress("P2V", &P2V, &b_fValley);
-   fChain->SetBranchAddress("Time", &Time, &b_fTime);
-   fChain->SetBranchAddress("Width", &Width, &b_fWidth);
-   fChain->SetBranchAddress("Charge", &Charge, &b_fCharge);
-   fChain->SetBranchAddress("Energy", &Energy, &b_fEnergy);
-   fChain->SetBranchAddress("Area", &Area, &b_fArea);
-   fChain->SetBranchAddress("TOF", &TOF, &b_fTOF);
-   fChain->SetBranchAddress("Next", &Next, &b_fNext);
-   fChain->SetBranchAddress("VETO", &VETO, &b_bVETO);
-   fChain->SetBranchAddress("MRD2", &MRD2, &b_bMRD2);
-   fChain->SetBranchAddress("MRD3", &MRD3, &b_bMRD3);
-   fChain->SetBranchAddress("Pulse", Pulse, &b_Pulse);
+   fChain->SetBranchAddress("Trigger", &Trigger, &b_Trigger);
+   fChain->SetBranchAddress("LastSync", &LastSync, &b_LastSync);
+   fChain->SetBranchAddress("SequenceID", &SequenceID, &b_SequenceID);
+   fChain->SetBranchAddress("StartTime", &StartTime, &b_StartTime);
+   fChain->SetBranchAddress("CardID", &CardID, &b_CardID);
+   fChain->SetBranchAddress("Channel", &Channel, &b_Channel);
+   fChain->SetBranchAddress("PMTID", &PMTID, &b_PMTID);
+   fChain->SetBranchAddress("PMTf", &PMTf, &b_PMTf);
+   fChain->SetBranchAddress("PMTx", &PMTx, &b_PMTx);
+   fChain->SetBranchAddress("PMTy", &PMTy, &b_PMTy);
+   fChain->SetBranchAddress("PMTz", &PMTz, &b_PMTz);
+   fChain->SetBranchAddress("BufferSize", &BufferSize, &b_BufferSize);
+   fChain->SetBranchAddress("Data", Data, &b_Data);
    Notify();
 }
 
-Bool_t Event::Notify()
+Bool_t PMTData::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -160,18 +148,18 @@ Bool_t Event::Notify()
    return kTRUE;
 }
 
-void Event::Show(Long64_t entry)
+void PMTData::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t Event::Cut(Long64_t entry)
+Int_t PMTData::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.
 // returns -1 otherwise.
    return 1;
 }
-#endif // #ifdef Event_cxx
+#endif // #ifdef PMTData_cxx

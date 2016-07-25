@@ -1,28 +1,35 @@
 #configuration file for PulseFinder
 #
-#debug is 1 for overwriting already analysed files, 0 for only new ones
-#verb is verbosity level
-#r_hys is the hysteresis ratio with respect to any threshold
-#thr_pek is the threshold for pulse definition
-#thr_evt is the threshold for event definition
-#thr_sig is the threshold for signal discrimination from background
-#shape is the time window, for peak and energy computation
-#binwid is the time calibration of Data bin width
-#graph is 1 for shape analysis, 0 for skipping it (requires some postprocessing resources)
-#concurr is -1 for not coincidence average, greater than 0 plot coincidence average
-#evlength is the bin size of Data for shape analysis
-#peakpos is the position of the peak in the evlength window, in percent
+#debug with 1 overwrites already analysed files, 0 analyses only the new ones
+#verbosity is the verbosity level
+#hysratio is the hysteresis ratio with respect to any threshold, 0 for no hysteresis
+#thrpeak is the threshold for pulse definition, in mV (?)
+#trhevent is the threshold for event definition
+#thrsignal is the threshold for signal discrimination from background, in us
+#shapingtime is the time window for peak search
+#sample is the ratio onf downsampling
+#binwidth is the time resolution of the digitiser, in us
+#buffer is the total length of the digitiser buffer
+#printgraph sets how many graph skips before saving, 0 doesn't save
+#printevent sets the threshold in PMT fired for full 2D event plot, -1 don't print
+#percent is the position of the peak in the graph window, in percent
+#eventlength is the bin size of graph window
+#lowbound is the lower bound for the TOF cut
+#upbound is the upper bound for the TOF cut
+
 debug 1
-verb 0
-r_hys 0
-thr_pek 0.02
-thr_evt 10
-thr_sig 5
-shape 4
+verbosity 0
+hysratio 0
+thrpeak 0.02
+trhevent 10
+thrsignal 4.0
+shapingtime 100
 sample 4
-binwid 0.002
-winlength 40000
-graph 1
-concurr -1
-evlength 500
-peakpos 20
+binwidth 0.002
+buffer 40000
+printgraph 100
+printevent 0
+percent 20
+eventlength 100
+lowbound -1
+upbound 1

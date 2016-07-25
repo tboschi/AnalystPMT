@@ -100,7 +100,7 @@ Int_t PMTData::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
-   return fChain->GetEntry(entry);
+   return fChain->GetEntry(entry, 0);
 }
 Long64_t PMTData::LoadTree(Long64_t entry)
 {

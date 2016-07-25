@@ -5,7 +5,9 @@
 #include <sstream>
 #include <vector>
 
-#include "Event.h"
+//#include "PMTData.h"
+#include "Utils.h"
+
 #include "TH1.h"
 #include "TH2.h"
 #include "TFile.h"
@@ -13,19 +15,9 @@
 #include "TGraph.h"
 #include "TTree.h"
 #include "TNtuple.h"
-#include "TList.h"
+#include "TChain.h"
 #include "TDirectory.h"
 
-bool graph;
-double bw;
-int sample;
-int wl;
-
-void SetConfig(std::string cfn);
-void SetGraph(bool val);
-void SetBW(double val);
-void SetSample(int val);
-void SetWinLen(int val);
 int main(int argc, char **argv)
 {
 	std::string fold = ".";
@@ -37,8 +29,9 @@ int main(int argc, char **argv)
 	ssL.str("");
 	ssL.clear();
 	ssL << "find ";
-	ssL << fold;
-       	ssL << " -name \"r*root\" > rootfiles.list";
+	for (int i = 1; i < argc; i++)
+		ssL << fold << " ";
+       	ssL << "-name \"r*root\" > rootfiles.list";
 	std::cout << ssL.str() << std::endl;
 	system(ssL.str().c_str());
 
@@ -56,7 +49,9 @@ int main(int argc, char **argv)
 	}
 	fin.close();
 
-	SetConfig("config");
+	Utils *Utl = Utils::GetUtils(); 
+	Utl->SetDir(fold);
+	Utl->SetConfig("config");
 
 	ssL.str("");
 	ssL.clear();
@@ -64,200 +59,233 @@ int main(int argc, char **argv)
 	std::cout << "Result in " << ssL.str() << std::endl;
 
 	TFile *rootF, *outF = new TFile(ssL.str().c_str(), "RECREATE");
-	TH1F *hSNtot, *hSignl, *hNoise, *hPtot, *hCtot;
-	TH1I *hEvent;
-	TH2F *hDarkN;
-	TGraph *gMean, *giRWM, *goRWM;
-	TNtuple *nevent;
 
-	TList *tlist = new TList;
+	//New objects
+	double xrange = Utl->GetBuffer()*Utl->GetBinWidth();
+	int nbins = int(0.1*Utl->GetBuffer());
+	TH1F *tPfile = new TH1F("tpfile", "pulses in file", nbins, 0, xrange);	
+	TH1F *tEvent = new TH1F("tevent", "events freq", nbins/20, 0, xrange);
+	TH1F *tEvenT = new TH1F("tevenT", "events time", nbins/10, 0, xrange);
+	TH1F *tEntry = new TH1F("tentry", "entries freq", nbins/20, 0, xrange);
+	TH1F *tBinWd = new TH1F("tbinwd", "event width", 40, 0, 8);
 
-	TH1F *TPtot = new TH1F("tptot", "time distribution", int(0.1*wl), 0, wl*bw);
-	TH1F *TCtot = new TH1F("tctot", "charge distribution", int(0.1*wl), 0, wl*bw);
-	TH1F *TSNtot = new TH1F("tsntot", "signal and noise", 5000, 0, 10);
-	TH1F *TSignl = new TH1F("tsignl", "signal", 5000, 0, 10);
-	TH1F *TNoise = new TH1F("tnoise", "dark noise", 5000, 0, 10);
-	TH1I *TEvent = new TH1I("tevent", "event", int(0.1*wl), 0, wl*bw);
-	TH2F *TDarkN = new TH2F("tdarkn", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
+//	TNtuple *tEvent = new TNtuple("nevent", "event data", "baseline:peak:p2v:charge:energy:tcfd:zeroc:tof");
 
-	TGraph *TGMean = new TGraph();
-	TGraph *TGiRWM = new TGraph();
-	TGraph *TGoRWM = new TGraph();
+	TH1F *tBaseLine = new TH1F("tbaseline", "Baseline", 250, -0.005, 0.005);
+	TH1F *tPeak = new TH1F("tpeak", "Peak", 500, 0, 5);
+	TH1F *tValley = new TH1F("tvalley", "Valley from peak", 200, 0, 1);
+	TH1F *tTime = new TH1F("ttime", "Time", nbins, 0, xrange);
+	TH1F *tWidth = new TH1F("twidth", "Pulse width", 500, -0.1, 0.9);
+	TH1F *tCharge = new TH1F("tcharge", "Charge", 500, -0.005, 0.075);
+	TH1F *tEnergy = new TH1F("tenergy", "Energy", 500, -0.005, 0.095);
+	TH1F *tArea = new TH1F("tarea", "Area", 500, 0, 0.1);
+	TH1F *tTOF = new TH1F("ttof", "Time of flight", nbins, -xrange, xrange);
+	TH1F *tNext = new TH1F("tnext", "Time of flight", nbins, 0, xrange);
+//	TH1I *tCard21 = new TH1I("tcard21", "Card 21 on event", 4, 0, 4);
 
-	TDirectory * dir;
+	TH2F *t2Dark = new TH2F("t2dark", "dark noise per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	TH2F *t2EvRa = new TH2F("t2evra", "event rate per pmt", 8, -0.5, 7.5, 8, -0.5, 7.5);
+	TH2F *t2EtDR = new TH2F("t2etdr", "event to noise ratio", 8, -0.5, 7.5, 8, -0.5, 7.5);
+
+	TGraph *tMean = new TGraph(Utl->GetEvtLength());
+	TGraph *tiTOF = new TGraph(Utl->GetEvtLength());
+	TGraph *toTOF = new TGraph(Utl->GetEvtLength());
+	TGraph *tNois = new TGraph(Utl->GetEvtLength());
+
+	//Old objects to catch
+	TH1F *hPfile;
+	TH1F *hEvent;
+	TH1F *hEvenT;
+	TH1F *hEntry;
+	TH1F *hBinWd;
+	TH1F *hBaseLine;
+	TH1F *hPeak;
+	TH1F *hValley;
+	TH1F *hTime;
+	TH1F *hWidth;
+	TH1F *hCharge;
+	TH1F *hEnergy;
+	TH1F *hArea;
+	TH1F *hTOF;
+	TH1F *hNext;
+//	TH1I *hCard21;
+	TH2F *h2Dark;
+	TH2F *h2EvRa;
+	TH2F *h2EtDR;
+	TGraph *gMean;
+	TGraph *giTOF;
+	TGraph *goTOF;
+	TGraph *gNois;
+
+	TChain *tDaisE = new TChain("tEvent");
+	TChain *tDaisN = new TChain("tNoise");
 
 	for (int v = 0; v < RF_In.size(); v++)
 	{
-		rootF = new TFile(RF_In.at(v).c_str(), "UPDATE");	//open files
-		if (rootF->IsZombie()) 
+		Utl->OpenIns(v, RF_In.at(v));
+		std::cout << "Opening " << Utl->InFile->GetName() << std::endl;
+
+		std::string TreeName = std::string(Utl->InFile->GetName()) + "/tEvent";
+		tDaisE->Add(TreeName.c_str());
+		TreeName = std::string(Utl->InFile->GetName()) + "/tNoise";
+		tDaisN->Add(TreeName.c_str());
+
+		hBaseLine = (TH1F*) Utl->InFile->Get("hbaseline");
+		hPeak = (TH1F*) Utl->InFile->Get("hpeak");
+		hValley = (TH1F*) Utl->InFile->Get("hvalley");
+		hTime = (TH1F*) Utl->InFile->Get("htime");
+		hWidth = (TH1F*) Utl->InFile->Get("hwidth");
+		hCharge = (TH1F*) Utl->InFile->Get("hcharge");
+		hEnergy = (TH1F*) Utl->InFile->Get("henergy");
+		hArea = (TH1F*) Utl->InFile->Get("harea");
+		hTOF = (TH1F*) Utl->InFile->Get("htof");
+		hNext = (TH1F*) Utl->InFile->Get("hnext");
+//		hCard21 = (TH1I*) Utl->InFile->Get("hcard21");
+		hPfile = (TH1F*) Utl->InFile->Get("hpfile");
+		hEvent = (TH1F*) Utl->InFile->Get("hevent");
+		hEvenT = (TH1F*) Utl->InFile->Get("hevenT");
+		hEntry = (TH1F*) Utl->InFile->Get("hentry");
+		hBinWd = (TH1F*) Utl->InFile->Get("hbinwd");
+		h2Dark = (TH2F*) Utl->InFile->Get("h2dark");
+		h2EvRa = (TH2F*) Utl->InFile->Get("h2evra");
+		h2EtDR = (TH2F*) Utl->InFile->Get("h2etdr");
+
+		gMean = (TGraph*) Utl->InFile->Get("gmean");
+		giTOF = (TGraph*) Utl->InFile->Get("gitof");
+		goTOF = (TGraph*) Utl->InFile->Get("gotof");
+		gNois = (TGraph*) Utl->InFile->Get("gnois");
+
+		double x, y, y0;
+		for (int i = 0; i < Utl->GetEvtLength(); i++)
 		{
-			std::cout << "ZOMBIE!\n";
-			rootF->Close();
-			continue;
-		}
-		else std::cout << "Opening " << RF_In.at(v) << std::endl;
+			tMean->GetPoint(i, x, y);
+			gMean->GetPoint(i, x, y0);
+			tMean->SetPoint(i, x, y+y0/RF_In.size());
 
-//Copy objects
+			tiTOF->GetPoint(i, x, y);
+			giTOF->GetPoint(i, x, y0);
+			tiTOF->SetPoint(i, x, y+y0/RF_In.size());
 
-		dir = (TDirectory*) rootF->Get("Event");
-		dir->GetObject("nevent", nevent);
+			toTOF->GetPoint(i, x, y);
+			goTOF->GetPoint(i, x, y0);
+			toTOF->SetPoint(i, x, y+y0/RF_In.size());
 
-		tlist->Add(nevent);
-
-		rootF->cd();
-	
-		hPtot = (TH1F*) rootF->Get("hptot"); 
-		hCtot = (TH1F*) rootF->Get("hctot"); 
-		hSNtot = (TH1F*) rootF->Get("hsntot"); 
-		hSignl = (TH1F*) rootF->Get("hsignl"); 
-		hNoise = (TH1F*) rootF->Get("hnoise"); 
-		hEvent = (TH1I*) rootF->Get("hevent"); 
-		hDarkN = (TH2F*) rootF->Get("hdark"); 
-
-		if (graph)
-		{
-			gMean = (TGraph*) rootF->Get("gmean");
-			giRWM = (TGraph*) rootF->Get("girwm");
-			goRWM = (TGraph*) rootF->Get("gorwm");
-
-			double x, y, y0;
-			for (int i = 0; i < gMean->GetN(); i++)
-			{
-				TGMean->GetPoint(i, x, y);
-				gMean->GetPoint(i, x, y0);
-				TGMean->SetPoint(i, x, y+y0/RF_In.size());
-	
-				TGiRWM->GetPoint(i, x, y);
-				giRWM->GetPoint(i, x, y0);
-				TGiRWM->SetPoint(i, x, y+y0/RF_In.size());
-	
-				TGoRWM->GetPoint(i, x, y);
-				goRWM->GetPoint(i, x, y0);
-				TGoRWM->SetPoint(i, x, y+y0/RF_In.size());
-			}
+			tNois->GetPoint(i, x, y);
+			gNois->GetPoint(i, x, y0);
+			tNois->SetPoint(i, x, y+y0/RF_In.size());
 		}
 
-		TPtot->Add(hPtot);
-		std::cout << "A1" << std::endl;
-		TCtot->Add(hCtot);
-		std::cout << "A2" << std::endl;
-		TSNtot->Add(hSNtot);
-		std::cout << "A3" << std::endl;
-		TSignl->Add(hSignl);
-		std::cout << "A4" << std::endl;
-		TNoise->Add(hNoise);
-		std::cout << "A5" << std::endl;
-		TEvent->Add(hEvent);
-		std::cout << "A6" << std::endl;
-		TDarkN->Add(hDarkN, 1.0/RF_In.size());
-		std::cout << "A7" << std::endl;
+		double scale = 1.0;
 
+		tPfile->Add(hPfile, scale);
+		tEvent->Add(hEvent, scale);
+		tEvenT->Add(hEvenT, scale);
+		tEntry->Add(hEntry, scale);
+		tBinWd->Add(hBinWd, scale);
+		tBaseLine->Add(hBaseLine, scale);
+		tPeak->Add(hPeak, scale);
+		tValley->Add(hValley, scale);
+		tTime->Add(hTime, scale);
+		tWidth->Add(hWidth, scale);
+		tCharge->Add(hCharge, scale);
+		tEnergy->Add(hEnergy, scale);
+		tArea->Add(hArea, scale);
+		tTOF->Add(hTOF, scale);
+		tNext->Add(hNext, scale);
+//		tCard21->Add(hCard21, scale);
+		t2Dark->Add(h2Dark, 1.0/RF_In.size());
+		t2EvRa->Add(h2EvRa, 1.0/RF_In.size());
+		t2EtDR->Add(h2EtDR, 1.0/RF_In.size());
+	}
+
+	Coord Pos;
+	double dD, dE;
+	for (int ID = 1; ID < 61; ID++)
+	{
+		Pos = Utl->Mapper(ID);
+		dD = t2Dark->GetBinContent(Pos.x+1, Pos.z+1);
+		dE = t2EvRa->GetBinContent(Pos.x+1, Pos.z+1);
+		t2EtDR->SetBinContent(Pos.x+1, Pos.z+1, dE/dD);
 	}
 
 //Write
 
+
 	outF->cd();
-
-	//Tree
-	TTree *tEv = TTree::MergeTrees(tlist);
-	tEv->SetName("tevreco");
-
 	//Histograms
-	TPtot->GetXaxis()->SetTitle("time");
-	TCtot->GetXaxis()->SetTitle("time");
-	TSNtot->GetXaxis()->SetTitle("amplitude");
-	TSignl->GetXaxis()->SetTitle("amplitude");
-	TNoise->GetXaxis()->SetTitle("amplitude");
-	TEvent->GetXaxis()->SetTitle("pmt fired");
-	TDarkN->GetXaxis()->SetTitle("x");
-	TDarkN->GetYaxis()->SetTitle("z");
-	TSNtot->SetLineColor(1);
-	TSignl->SetLineColor(2);
-	TNoise->SetLineColor(4);
-	TPtot->SetStats(kFALSE);
-	TCtot->SetStats(kFALSE);
-	TSNtot->SetStats(kFALSE);
-	TSignl->SetStats(kFALSE);
-	TNoise->SetStats(kFALSE);
-	TEvent->SetStats(kFALSE);
-	TDarkN->SetStats(kFALSE);
-	TSNtot->Rebin(10);
-	TSignl->Rebin(10);
-	TNoise->Rebin(10);
-	TDarkN->SetContour(40);
-	TDarkN->SetOption("COLZ10TEXT");
+	tPfile->SetStats(kFALSE);
+	tEvent->SetStats(kTRUE);
+	tEvenT->SetStats(kTRUE);
+	tEntry->SetStats(kTRUE);
+	tBinWd->SetStats(kTRUE);
+	t2Dark->SetStats(kFALSE);
+	t2Dark->SetContour(40);
+	t2Dark->SetOption("COLZ10TEXT");
+	t2EvRa->SetStats(kFALSE);
+	t2EvRa->SetContour(40);
+	t2EvRa->SetOption("COLZ10TEXT");
+	t2EtDR->SetStats(kFALSE);
+	t2EtDR->SetContour(40);
+	t2EtDR->SetOption("COLZ10TEXT");
 
-	//Graphs
-	TGMean->GetXaxis()->SetTitle("time");
-	TGMean->GetYaxis()->SetTitle("Data");
-	TGMean->SetTitle("Average pulse");
-	TGMean->SetLineColor(1);
+	tPfile->GetXaxis()->SetTitle("time");
+	tEvent->GetXaxis()->SetTitle("pmt fired");
+	tEvenT->GetXaxis()->SetTitle("pmt fired");
+	tEntry->GetXaxis()->SetTitle("entries");
+	tBinWd->GetXaxis()->SetTitle("width");
+	t2Dark->GetXaxis()->SetTitle("x");
+	t2Dark->GetYaxis()->SetTitle("z");
+	t2EvRa->GetXaxis()->SetTitle("x");
+	t2EvRa->GetYaxis()->SetTitle("z");
+	t2EtDR->GetXaxis()->SetTitle("x");
+	t2EtDR->GetYaxis()->SetTitle("z");
+	tMean->GetXaxis()->SetTitle("time");
+	tiTOF->GetXaxis()->SetTitle("time");
+	toTOF->GetXaxis()->SetTitle("time");
+	tNois->GetXaxis()->SetTitle("time");
+	tMean->GetYaxis()->SetTitle("amplitude");
+	tiTOF->GetYaxis()->SetTitle("amplitude");
+	toTOF->GetYaxis()->SetTitle("amplitude");
+	tNois->GetYaxis()->SetTitle("amplitude");
 
-	TGiRWM->GetXaxis()->SetTitle("time");
-	TGiRWM->GetYaxis()->SetTitle("Data");
-	TGiRWM->SetTitle("Coincidence pulse");
-	TGiRWM->SetLineColor(2);
+	tMean->SetTitle("Average of signals");
+	tiTOF->SetTitle("In coincidence");
+	toTOF->SetTitle("Out coincidence");
+	tNois->SetTitle("Average of noise");
 
-	TGoRWM->GetXaxis()->SetTitle("time");
-	TGoRWM->GetYaxis()->SetTitle("Data");
-	TGoRWM->SetTitle("Not Coincidence pulse");
-	TGoRWM->SetLineColor(4);
+//	tTreeEvent->Write();
 
-	outF->Write();
-	TGMean->Write("tgmean");
-	TGiRWM->Write("tgirwm");
-	TGoRWM->Write("tgorwm");
+	tBaseLine->Write();
+	tPeak->Write();
+	tValley->Write();
+	tTime->Write();
+	tWidth->Write();
+	tCharge->Write();
+	tEnergy->Write();
+	tArea->Write();
+	tTOF->Write();
+	tNext->Write();
+//	tCard21->Write();
 
-	std::cout << std::endl;
+	tPfile->Write();
+	tEvent->Write();
+	tEvenT->Write();
+	tEntry->Write();
+	tBinWd->Write();
+	t2Dark->Write();
+	t2EvRa->Write();
+	t2EtDR->Write();
+	tMean->Write("tMean");
+	tiTOF->Write("tiTOF");
+	toTOF->Write("toTOF");
+	tNois->Write("tNois");
 
-	outF->Close();
-	rootF->Close();
+	outF->cd();
+	tDaisE->Merge(outF, 1111, "keep");
+	tDaisN->Merge(outF, 1111);
 
-	delete TGMean;
+//	outF->Close();
+	Utl->InFile->Close();
 
 	return 0;
-}
-
-void SetConfig(std::string cfn)
-{
-	std::ifstream fin(cfn.c_str());
-	std::string Line, var;
-	double val;
-	std::stringstream ssL;
-	while (getline(fin, Line))
-	{
-		if (Line[0] == '#') continue;
-		else
-		{
-			ssL.str("");
-			ssL.clear();
-			ssL << Line;
-			ssL >> var >> val;
-			if (var == "graph") SetGraph(val);
-			if (var == "sample") SetSample(val);
-			if (var == "binwid") SetBW(val);
-			if (var == "winlength") SetWinLen(val);
-		}
-	}
-	fin.close();
-}
-
-void SetGraph(bool val)
-{
-	graph = val;
-}
-
-void SetSample(int val)
-{
-	sample = val;
-}
-
-void SetBW(double val)
-{
-	bw = sample*val;
-}
-
-void SetWinLen(int val)
-{
-	wl = val/sample;
 }

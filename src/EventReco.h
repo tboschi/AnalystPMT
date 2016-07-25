@@ -10,7 +10,9 @@
 #include <cstdlib>
 #include <map>
 
-#include "PMTData.h"
+#include "Utils.h"
+//#include "PMTData.h"
+
 #include "TROOT.h"
 #include "TStyle.h"
 #include "TH1.h"
@@ -22,64 +24,83 @@
 #include "TGraph.h"
 #include "TMath.h"
 #include "TCanvas.h"
-#include "TNtuple.h"
-#include "TLine.h"
+//#include "TNtuple.h"
+
 
 class EventReco
 {
 	public:
-		EventReco(std::string cfn, PMTData *PMT, int ent, int bin, int rwm, int trg, int id, int evt);
-		void LoadGraph();
-		void LoadDeriv();
-		void FillN(TNtuple *nT);
-		void LoadN();
+		EventReco(int ent, int bin, int rwm);
+		EventReco(TGraph* iG);
+		~EventReco();
+
+		void Init(int length);
+		TGraph *LoadGraph();
+		TGraph *LoadDeriv();
+		float* GetPulse();
+		void LoadPulse(float *ext);
+//		void FillN(TNtuple *nT);
+		void LoadParam();
 		void Print();
-		TGraph *GetGraph();
-		TGraph *GetDeriv();
-		void SetBL();			//Set to zero the avg of the first 20 points
-		void SetPK();			//Peak of pulse
-		void SetVL();			//Valley of pulse
-		void SetCH();			//Charge, sum of bin around peak
-		void SetEN();			//Energy = integral from tcfd to zc
-		void SetCFD();			//Start of pulse
-		void SetZC();			//width of pulse = Zero Crossin
+
+		void SetBaseLine();		//Set to zero the avg of the first 20 points
+		void SetPeak();			//Peak of pulse
+		void SetValley();		//Valley of pulse
+		void SetCharge();		//Charge, sum of bin around peak
+		void SetEnergy();		//Energy = integral from tcfd to zc
+		void SetArea();			//Energy = integral of the whole pulse
+		void SettCFD();			//Start of pulse
+		void SetZeroC();		//width of pulse = Zero Crossin
 		void SetTOF();			//time of flight = zeroc-tcfd
-		void SetBW(double binw);	//bin width
-		void SetEL(int evnl);		//lenght of an event
-		void SetWL(int evnl);		//time window lenght
-		void SetSample(int evnl);	//Sample of digitiser
-		void SetPC(double perc);	//Peak pos in percent
-		double CI(double *data, int x2, double fmax, double tau);
-		double GetBL();
-		double GetPK();
-		double GettPK();
-		double GetVL();
-		double GettVL();
-		double GetCH();
-		double GetEN();
-		double GetCFD();
-		double GetZC();
+		double GetBaseLine();
+		double GetPeak();
+		int GettPeak();
+		double GetValley();
+		int GettValley();
+		double GettP2V();
+		double GetCharge();
+		double GetEnergy();
+		double GetArea();
+		double GettCFD();
+		double GetZeroC();
 		double GetTOF();
-		int GetTRG();
-		int GetID();
-		int GetEVT();
-		double GetBW();
-		int GetEL();
-		int GetWL();
-		int GetSample();
-		double GetPC();
-		void SetConfig(std::string cfn);
+		int GetEntry();
+//		int GetTRG();
+//		int GetID();
+//		int GetEVT();
+//		double GetBW();
+//		int GetEL();
+//		int GetWL();
+//		int GetSample();
+//		double GetPC();
+//		void SetConfig(std::string cfn);
 
 	private:
-		double Baseline, Peak, Valley, Charge, Energy, tCFD, ZeroC, TOF;
-		int tPeak, tValley;
-		int RWM, TRG, ID, EVT;
-		double bw, pc;
-		int el, wl, np, sample;
+
+		Utils *Utl;
+		PMTData *PMT;
+
+		double fBaseLine;	//AVG of first 20 points of graph
+		double fPeak;		//Maximum of graph
+		double fValley;		//Minimum of graph
+		double fCharge;		//Sum of 5 points around peak
+		double fEnergy;		//Area between tCFD and end of pulse
+		double fArea;		//Integral of the whole pulse
+		double ftCFD;		//Real start of pulse
+		double fZeroC;		//Time between tCFD and end of pulse
+		double fTOF;		//Diff between tCFD and reference (RWM)
+		int iPeak;		//gloabl pos of Peak	//No Set function
+		int iValley;		//local  pos of Valley	//No Set function
+
+		double fBW, fPC;
+		int iEL, iWL, iRWM;
+		int NewP;
+		int iEnt;
 
 		TGraph *gPulse, *gDeriv;
-		TNtuple *nPulse;
-		double *Pulse;
+//		TNtuple *nPulse;
+		float *Pulse;
+
 };
 
 #endif

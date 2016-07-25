@@ -1,14 +1,14 @@
-#define Event_cxx
-#include "Event.h"
+#define PMTData_cxx
+#include "PMTData.h"
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
 
-void Event::Loop()
+void PMTData::Loop()
 {
 //   In a ROOT session, you can do:
-//      root> .L Event.C
-//      root> Event t
+//      root> .L PMTData.C
+//      root> PMTData t
 //      root> t.GetEntry(12); // Fill t data members with entry number 12
 //      root> t.Show();       // Show values of entry 12
 //      root> t.Show(16);     // Read and show values of entry 16
