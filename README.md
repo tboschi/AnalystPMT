@@ -22,26 +22,18 @@ It's possible to Merge already merged ROOT files and this is done by the "SuperM
 
 ###Building and Usage
 A Makefile is available to build the software.
-
 To build them all
 ```
 make
 ```
 
 otherwise they can be built separately
-```
-make pulse
-make merge
-make super
-make select
-```
 
+|Executable | `make`     | 
+|---------- |----------- |
 |Main       | make pulse |
-|---------- |----------- |
 |Merge      | make merge |
-|---------- |----------- |
 |SuperMerge | make super |
-|---------- |----------- |
 |Select     | make select|
 
 Main requires 0 or 1 argument.
