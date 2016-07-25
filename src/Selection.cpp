@@ -32,7 +32,6 @@ int main(int argc, char **argv)
 	getline(std::cin, sCut);
 	
 	TCut mCut(sCut.c_str());
-	std::cout << "tcut " << mCut << std::endl;
 
 	std::string sOut;
 	std::cout << "Save as: ";

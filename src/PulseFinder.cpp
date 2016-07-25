@@ -259,6 +259,7 @@ void PulseFinder::FindEvents(int trg)
 	}
 
 	hEntry->Fill(hPtrig->GetEntries());
+	hPtrig->Write();
 }
 
 //Fill events and selec signal from noise
