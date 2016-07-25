@@ -29,12 +29,12 @@ make
 
 otherwise they can be built separately
 
-|Executable | `make`     | 
-|---------- |----------- |
-|Main       | make pulse |
-|Merge      | make merge |
-|SuperMerge | make super |
-|Select     | make select|
+|Executable | `make`   | 
+|---------- |--------- |
+|Main       | `pulse`  |
+|Merge      | `merge`  |
+|SuperMerge | `super`  |
+|Select     | `select` |
 
 Main requires 0 or 1 argument.
 The sole argument is the directory where the root files (preferably from the same Run/Subrun) are stored.
