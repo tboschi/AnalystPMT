@@ -36,10 +36,10 @@ make super
 make select
 ```
 
-|Main|make pulse|
-|Merge|make merge|
-|SuperMerge|make super|
-|Select|make select|
+|Main       | make pulse |
+|Merge      | make merge |
+|SuperMerge | make super |
+|Select     | make select|
 
 Main requires 0 or 1 argument.
 The sole argument is the directory where the root files (preferably from the same Run/Subrun) are stored.
